@@ -12,7 +12,7 @@ public class MemoryListener : IDisposable
     /// <summary>
     /// 当监听值发生改变时触发
     /// </summary>
-    public event XFEEventHandler<nint, object>? ValueChanged;
+    public event XFEEventHandler<nint, MemoryValue>? ValueChanged;
     /// <summary>
     /// 进程句柄
     /// </summary>
@@ -39,8 +39,8 @@ public class MemoryListener : IDisposable
                 var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
                 if (!currentValue.Equals(lastValue))
                 {
-                    ValueChanged?.Invoke(ProcessHandler, currentValue);
-                    currentValue = lastValue;
+                    ValueChanged?.Invoke(ProcessHandler, new(lastValue, currentValue));
+                    lastValue = currentValue;
                 }
             }
             listeningList.Remove(memoryAddress);
@@ -65,7 +65,7 @@ public class MemoryListener : IDisposable
                 var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
                 if (!currentValue.Equals(lastValue))
                 {
-                    ValueChanged?.Invoke(ProcessHandler, currentValue);
+                    ValueChanged?.Invoke(ProcessHandler, new(lastValue, currentValue));
                     currentValue = lastValue;
                 }
                 Thread.Sleep(delay);

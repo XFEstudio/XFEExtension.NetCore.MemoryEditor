@@ -13,7 +13,7 @@ public partial class MemoryEditor
     /// <summary>
     /// 当指定地址的内存值变化时触发
     /// </summary>
-    public event XFEEventHandler<nint, object>? ValueChanged;
+    public event XFEEventHandler<nint, MemoryValue>? ValueChanged;
     /// <summary>
     /// 目标进程
     /// </summary>

@@ -13,13 +13,14 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</RepositoryUrl>
     <PackageTags>XFE;XFEExtension;MemoryEdit;Memory</PackageTags>
-    <PackageReleaseNotes>添加内存监听器功能</PackageReleaseNotes>
+    <PackageReleaseNotes>fix-修复监听一直触发的bug
+add-现在监听将使用MemoryValue类</PackageReleaseNotes>
     <Copyright>寰宇朽力网络科技版权所有</Copyright>
     <PackageProjectUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</PackageProjectUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
