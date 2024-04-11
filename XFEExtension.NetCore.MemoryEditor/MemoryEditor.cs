@@ -49,7 +49,16 @@ public partial class MemoryEditor
     /// </summary>
     /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
     /// <param name="address">待监听的内存地址</param>
-    public void AddListener<T>(nint address) where T : struct => _ = Listener.StartListen<T>(address);
+    /// <param name="customName">自定义监听器标识名</param>
+    public void AddListener<T>(nint address, string customName = "") where T : struct => _ = Listener.StartListen<T>(address, customName);
+    /// <summary>
+    /// 添加监听器
+    /// </summary>
+    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
+    /// <param name="address">待监听的内存地址</param>
+    /// <param name="delay">检测频率，以毫秒为单位</param>
+    /// <param name="customName">自定义监听器标识名</param>
+    public void AddListener<T>(nint address, int delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(address, delay, customName);
     /// <summary>
     /// 移除并停止指定监听器
     /// </summary>
@@ -58,7 +67,7 @@ public partial class MemoryEditor
     /// <summary>
     /// 移除所有监听器
     /// </summary>
-    public void RemoveListeners()=> Listener.StopListener();
+    public void RemoveListeners() => Listener.StopListener();
     /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>

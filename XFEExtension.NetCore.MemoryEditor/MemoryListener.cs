@@ -26,8 +26,9 @@ public class MemoryListener : IDisposable
     /// </summary>
     /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
     /// <param name="memoryAddress">待监听的内存地址</param>
+    /// <param name="customName">自定义监听器标识名</param>
     /// <returns></returns>
-    public async Task StartListen<T>(nint memoryAddress) where T : struct
+    public async Task StartListen<T>(nint memoryAddress, string customName = "") where T : struct
     {
         IsListening = true;
         listeningList.Add(memoryAddress, true);
@@ -39,7 +40,7 @@ public class MemoryListener : IDisposable
                 var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
                 if (!currentValue.Equals(lastValue))
                 {
-                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue));
+                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
                     lastValue = currentValue;
                 }
             }
@@ -52,8 +53,9 @@ public class MemoryListener : IDisposable
     /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
     /// <param name="memoryAddress">待监听的内存地址</param>
     /// <param name="delay">检测频率，以毫秒为单位</param>
+    /// <param name="customName">自定义监听器标识名</param>
     /// <returns></returns>
-    public async Task StartListen<T>(nint memoryAddress, int delay = 10) where T : struct
+    public async Task StartListen<T>(nint memoryAddress, int delay, string customName = "") where T : struct
     {
         IsListening = true;
         listeningList.Add(memoryAddress, true);
@@ -65,7 +67,7 @@ public class MemoryListener : IDisposable
                 var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
                 if (!currentValue.Equals(lastValue))
                 {
-                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue));
+                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
                     currentValue = lastValue;
                 }
                 Thread.Sleep(delay);
