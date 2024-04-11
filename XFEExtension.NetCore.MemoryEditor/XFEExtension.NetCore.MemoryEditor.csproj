@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Title>XFEExtension.NetCore.MemoryEditor</Title>
+    <Authors>XFEstudio</Authors>
+    <Company>寰宇朽力网络科技</Company>
+    <Description>内存读写工具</Description>
+  </PropertyGroup>
+
+</Project>
