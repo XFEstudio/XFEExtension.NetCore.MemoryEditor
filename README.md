@@ -1,0 +1,1 @@
+# XFEExtension.NetCore.MemoryEditor
