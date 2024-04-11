@@ -39,7 +39,7 @@ public class MemoryListener : IDisposable
                 var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
                 if (!currentValue.Equals(lastValue))
                 {
-                    ValueChanged?.Invoke(ProcessHandler, new(lastValue, currentValue));
+                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue));
                     lastValue = currentValue;
                 }
             }
@@ -65,7 +65,7 @@ public class MemoryListener : IDisposable
                 var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
                 if (!currentValue.Equals(lastValue))
                 {
-                    ValueChanged?.Invoke(ProcessHandler, new(lastValue, currentValue));
+                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue));
                     currentValue = lastValue;
                 }
                 Thread.Sleep(delay);
