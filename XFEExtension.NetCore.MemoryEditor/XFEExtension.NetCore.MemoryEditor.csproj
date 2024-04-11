@@ -17,6 +17,7 @@
     <Copyright>寰宇朽力网络科技版权所有</Copyright>
     <PackageProjectUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</PackageProjectUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
