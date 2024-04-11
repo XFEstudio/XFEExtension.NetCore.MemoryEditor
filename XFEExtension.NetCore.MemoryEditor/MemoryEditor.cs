@@ -22,6 +22,10 @@ public partial class MemoryEditor
     /// </summary>
     public nint ProcessHandle { get; set; }
     /// <summary>
+    /// 进程位数类型（32/64）
+    /// </summary>
+    public ProcessType ProcessBiteType { get; set; }
+    /// <summary>
     /// 读取指定地址的内存
     /// </summary>
     /// <typeparam name="T">目标类型（int,float,long等）</typeparam>
@@ -36,34 +40,48 @@ public partial class MemoryEditor
     /// <param name="source">待写入值</param>
     public void WriteMemory<T>(nint address, T source) where T : struct => WriteMemory<T>(ProcessHandle, address, source);
     /// <summary>
+    /// 解析基址对应的实际地址
+    /// </summary>
+    /// <param name="moduleName">模块名称（基址的进程部分，可以是DLL等）</param>
+    /// <param name="baseAddress">基址的地址部分</param>
+    /// <param name="offsets">基址的偏移组</param>
+    /// <returns>实际地址</returns>
+    public nint ResolvePointerAddress(string moduleName, int baseAddress, params int[] offsets) => ResolvePointerAddress(TargetProcess.ProcessName, moduleName, baseAddress, ProcessBiteType, offsets);
+    /// <summary>
     /// 内存编辑器
     /// </summary>
-    /// <param name="process"></param>
+    /// <param name="process">进程</param>
+    /// <param name="processType">进程位数类型（32/64）</param>
     /// <param name="processAccessFlags">进程访问权限</param>
-    public MemoryEditor(Process process, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    public MemoryEditor(Process process, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
         TargetProcess = process;
         ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+        ProcessBiteType = processType;
     }
     /// <summary>
     /// 内存编辑器
     /// </summary>
-    /// <param name="processName"></param>
+    /// <param name="processName">进程名称</param>
+    /// <param name="processType">进程位数类型（32/64）</param>
     /// <param name="processAccessFlags">进程访问权限</param>
-    public MemoryEditor(string processName, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    public MemoryEditor(string processName, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
         TargetProcess = Process.GetProcessesByName(processName).First();
         ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+        ProcessBiteType = processType;
     }
     /// <summary>
     /// 内存编辑器
     /// </summary>
-    /// <param name="processId"></param>
+    /// <param name="processId">进程PID</param>
+    /// <param name="processType">进程位数类型（32/64）</param>
     /// <param name="processAccessFlags">进程访问权限</param>
-    public MemoryEditor(int processId, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    public MemoryEditor(int processId, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
         TargetProcess = Process.GetProcessById(processId);
         ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+        ProcessBiteType = processType;
     }
     #region 静态方法
     /// <summary>
