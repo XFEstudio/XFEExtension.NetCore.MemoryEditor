@@ -34,15 +34,20 @@ public class MemoryListener : IDisposable
         listeningList.Add(memoryAddress, true);
         await Task.Run(() =>
         {
-            var lastValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
+            var lastValue = default(T);
+            try { lastValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress); } catch { }
             while (listeningList[memoryAddress] && IsListening)
             {
-                var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
-                if (!currentValue.Equals(lastValue))
+                try
                 {
-                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
-                    lastValue = currentValue;
+                    var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
+                    if (!currentValue.Equals(lastValue))
+                    {
+                        ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
+                        lastValue = currentValue;
+                    }
                 }
+                catch { }
             }
             listeningList.Remove(memoryAddress);
         });
@@ -61,16 +66,22 @@ public class MemoryListener : IDisposable
         listeningList.Add(memoryAddress, true);
         await Task.Run(() =>
         {
-            var lastValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
+            var lastValue = default(T);
+            try { lastValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress); } catch { }
             while (listeningList[memoryAddress] && IsListening)
             {
-                var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
-                if (!currentValue.Equals(lastValue))
+                try
                 {
-                    ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
-                    currentValue = lastValue;
+
+                    var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
+                    if (!currentValue.Equals(lastValue))
+                    {
+                        ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
+                        currentValue = lastValue;
+                    }
+                    Thread.Sleep(delay);
                 }
-                Thread.Sleep(delay);
+                catch { }
             }
             listeningList.Remove(memoryAddress);
         });
