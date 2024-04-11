@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Runtime.InteropServices;
 using XFEExtension.NetCore.DelegateExtension;
 
@@ -22,6 +23,10 @@ public partial class MemoryEditor
     /// </summary>
     public nint ProcessHandle { get; set; }
     /// <summary>
+    /// 内存监听器
+    /// </summary>
+    public MemoryListener Listener { get; set; }
+    /// <summary>
     /// 进程位数类型（32/64）
     /// </summary>
     public ProcessType ProcessBiteType { get; set; }
@@ -39,6 +44,21 @@ public partial class MemoryEditor
     /// <param name="address">目标地址</param>
     /// <param name="source">待写入值</param>
     public void WriteMemory<T>(nint address, T source) where T : struct => WriteMemory<T>(ProcessHandle, address, source);
+    /// <summary>
+    /// 添加监听器
+    /// </summary>
+    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
+    /// <param name="address">待监听的内存地址</param>
+    public void AddListener<T>(nint address) where T : struct => _ = Listener.StartListen<T>(address);
+    /// <summary>
+    /// 移除并停止指定监听器
+    /// </summary>
+    /// <param name="address">监听地址</param>
+    public void RemoveListener(nint address) => Listener.StopListener(address);
+    /// <summary>
+    /// 移除所有监听器
+    /// </summary>
+    public void RemoveListeners()=> Listener.StopListener();
     /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>
@@ -58,6 +78,8 @@ public partial class MemoryEditor
         TargetProcess = process;
         ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
         ProcessBiteType = processType;
+        Listener = new(ProcessHandle);
+        Listener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
     }
     /// <summary>
     /// 内存编辑器
@@ -70,6 +92,8 @@ public partial class MemoryEditor
         TargetProcess = Process.GetProcessesByName(processName).First();
         ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
         ProcessBiteType = processType;
+        Listener = new(ProcessHandle);
+        Listener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
     }
     /// <summary>
     /// 内存编辑器
@@ -82,6 +106,8 @@ public partial class MemoryEditor
         TargetProcess = Process.GetProcessById(processId);
         ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
         ProcessBiteType = processType;
+        Listener = new(ProcessHandle);
+        Listener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
     }
     #region 静态方法
     /// <summary>
