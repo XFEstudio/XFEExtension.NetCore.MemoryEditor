@@ -9,6 +9,25 @@
     <Authors>XFEstudio</Authors>
     <Company>寰宇朽力网络科技</Company>
     <Description>内存读写工具</Description>
+    <PackageIcon>logoIcon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</RepositoryUrl>
+    <PackageTags>XFE;XFEExtension;MemoryEdit;Memory</PackageTags>
+    <PackageReleaseNotes>FirstRelease</PackageReleaseNotes>
+    <Copyright>寰宇朽力网络科技版权所有</Copyright>
+    <PackageProjectUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</PackageProjectUrl>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\logoIcon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>

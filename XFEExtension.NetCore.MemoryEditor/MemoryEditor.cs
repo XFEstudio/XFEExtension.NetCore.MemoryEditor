@@ -3,20 +3,64 @@ using System.Runtime.InteropServices;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 
+/// <summary>
+/// 内存编辑器
+/// </summary>
 public partial class MemoryEditor
 {
-    #region DLL引用
-    [LibraryImport("kernel32.dll")]
-    internal static partial nint OpenProcess(int dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, int dwProcessId);
-
-    [LibraryImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static partial bool WriteProcessMemory(nint hProcess, nint lpBaseAddress, byte[] lpBuffer, uint nSize, out int lpNumberOfBytesWritten);
-
-    [LibraryImport("kernel32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static partial bool ReadProcessMemory(nint hProcess, nint lpBaseAddress, [Out] byte[] lpBuffer, uint dwSize, out int lpNumberOfBytesRead);
-    #endregion
+    /// <summary>
+    /// 目标进程
+    /// </summary>
+    public Process TargetProcess { get; set; }
+    /// <summary>
+    /// 进程句柄
+    /// </summary>
+    public nint ProcessHandle { get; set; }
+    /// <summary>
+    /// 读取指定地址的内存
+    /// </summary>
+    /// <typeparam name="T">目标类型（int,float,long等）</typeparam>
+    /// <param name="address">指定地址</param>
+    /// <returns></returns>
+    public T ReadMemory<T>(nint address) where T : struct => ReadMemory<T>(ProcessHandle, address);
+    /// <summary>
+    /// 在指定内存地址中写入数据
+    /// </summary>
+    /// <typeparam name="T">数据类型（int,float,long等）</typeparam>
+    /// <param name="address">目标地址</param>
+    /// <param name="source">待写入值</param>
+    public void WriteMemory<T>(nint address, T source) where T : struct => WriteMemory<T>(ProcessHandle, address, source);
+    /// <summary>
+    /// 内存编辑器
+    /// </summary>
+    /// <param name="process"></param>
+    /// <param name="processAccessFlags">进程权限</param>
+    public MemoryEditor(Process process, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    {
+        TargetProcess = process;
+        ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+    }
+    /// <summary>
+    /// 内存编辑器
+    /// </summary>
+    /// <param name="processName"></param>
+    /// <param name="processAccessFlags">进程权限</param>
+    public MemoryEditor(string processName, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    {
+        TargetProcess = Process.GetProcessesByName(processName).First();
+        ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+    }
+    /// <summary>
+    /// 内存编辑器
+    /// </summary>
+    /// <param name="processId"></param>
+    /// <param name="processAccessFlags">进程权限</param>
+    public MemoryEditor(int processId, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    {
+        TargetProcess = Process.GetProcessById(processId);
+        ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+    }
+    #region 静态方法
     /// <summary>
     /// 获取程序句柄
     /// </summary>
@@ -31,20 +75,26 @@ public partial class MemoryEditor
     /// <summary>
     /// 获取程序句柄
     /// </summary>
-    /// 
+    /// <param name="processName">进程名称</param>
     /// <param name="flags">权限</param>
     /// <returns></returns>
     public static nint GetProcessHandle(string processName, ProcessAccessFlags flags)
     {
-        nint processHandle = OpenProcess((int)flags, false, processId);
+        nint processHandle = OpenProcess((int)flags, false, Process.GetProcessesByName(processName).First().Id);
         return processHandle;
     }
-
+    /// <summary>
+    /// 读取指定地址的内存
+    /// </summary>
+    /// <typeparam name="T">目标类型（int,float,long等）</typeparam>
+    /// <param name="processHandle">进程句柄</param>
+    /// <param name="address">指定地址</param>
+    /// <returns></returns>
     public static T ReadMemory<T>(nint processHandle, nint address) where T : struct
     {
         unsafe
         {
-            var size = sizeof(T);
+            var size = Marshal.SizeOf<T>();
             var buffer = new byte[size];
             ReadProcessMemory(processHandle, address, buffer, (uint)size, out _);
             fixed (byte* pBuffer = buffer)
@@ -53,55 +103,98 @@ public partial class MemoryEditor
             }
         }
     }
-
-    // 写入进程内存
-    public static void WriteMemory(nint processHandle, nint address, byte[] buffer)
+    /// <summary>
+    /// 在指定内存中写入数据
+    /// </summary>
+    /// <typeparam name="T">数据类型（int,float,long等）</typeparam>
+    /// <param name="processHandle">进程句柄</param>
+    /// <param name="address">目标地址</param>
+    /// <param name="source">待写入值</param>
+    public static void WriteMemory<T>(nint processHandle, nint address, T source) where T : struct
     {
+        var buffer = StructureToByteArray(source);
         WriteProcessMemory(processHandle, address, buffer, (uint)buffer.Length, out _);
     }
-
-    // 解析指针地址
-    public static nint ResolvePointerAddress(string processName, string moduleName, int firstAddress, int[] offsets, int size)
+    /// <summary>
+    /// 解析基址对应的实际地址
+    /// </summary>
+    /// <param name="processName">进程名称</param>
+    /// <param name="moduleName">模块名称（基址的进程部分，可以是DLL等）</param>
+    /// <param name="baseAddress">基址的地址部分</param>
+    /// <param name="processType">目标进程类型</param>
+    /// <param name="offsets">基址的偏移组</param>
+    /// <returns>实际地址</returns>
+    public static nint ResolvePointerAddress(string processName, string moduleName, int baseAddress, ProcessType processType, params int[] offsets)
     {
-        // 获取游戏进程
         var gameProcess = GetGameProcessByName(processName);
         if (gameProcess == null)
         {
-            Console.WriteLine("游戏进程未找到！");
+            Trace.WriteLine("游戏进程未找到！");
             return nint.Zero;
         }
-
-        // 获取模块基址
         var moduleBaseAddress = GetModuleBaseAddress(gameProcess, moduleName);
         if (moduleBaseAddress == nint.Zero)
         {
-            Console.WriteLine($"未找到模块：{moduleName}");
+            Trace.WriteLine($"未找到模块：{moduleName}");
             return nint.Zero;
         }
-
-        // 解析指针地址
-        var resolvedAddress = nint.Add(moduleBaseAddress, firstAddress);
+        var resolvedAddress = nint.Add(moduleBaseAddress, baseAddress);
         foreach (int offset in offsets)
         {
-            var longAddress = ReadMemory<long>(gameProcess.Handle, resolvedAddress);
-            var pointerValue = new nint(longAddress);
-            resolvedAddress = nint.Add(pointerValue, offset);
+            if (processType == ProcessType.Bit32)
+            {
+                var nextAddress = ReadMemory<int>(gameProcess.Handle, resolvedAddress);
+                var pointerValue = new nint(nextAddress);
+                Trace.WriteLine(pointerValue.ToString("X"));
+                resolvedAddress = nint.Add(pointerValue, offset);
+            }
+            else
+            {
+                var nextAddress = ReadMemory<long>(gameProcess.Handle, resolvedAddress);
+                var pointerValue = new nint(nextAddress);
+                Trace.WriteLine(pointerValue.ToString("X"));
+                resolvedAddress = nint.Add(pointerValue, offset);
+            }
         }
-
         return resolvedAddress;
     }
-
-    // 获取进程对象
-    public static Process? GetGameProcessByName(string processName)
-    {
-        Process[] processes = Process.GetProcessesByName(processName);
-        return processes.Length > 0 ? processes[0] : null;
-    }
-
-    // 获取模块基址
+    /// <summary>
+    /// 通过模块名称获取模块地址
+    /// </summary>
+    /// <param name="process">模块所在进程</param>
+    /// <param name="moduleName">模块名称</param>
+    /// <returns></returns>
     public static nint GetModuleBaseAddress(Process process, string moduleName)
     {
         var module = process.Modules.Cast<ProcessModule>().FirstOrDefault(m => m.ModuleName.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
         return module != null ? module.BaseAddress : nint.Zero;
     }
+    internal static Process? GetGameProcessByName(string processName)
+    {
+        var processes = Process.GetProcessesByName(processName);
+        return processes.Length > 0 ? processes[0] : null;
+    }
+    private static byte[] StructureToByteArray<T>(T source) where T : struct
+    {
+        var size = Marshal.SizeOf<T>();
+        var buffer = new byte[size];
+        IntPtr ptr = Marshal.AllocHGlobal(size);
+        Marshal.StructureToPtr(source, ptr, true);
+        Marshal.Copy(ptr, buffer, 0, size);
+        Marshal.FreeHGlobal(ptr);
+        return buffer;
+    }
+    #endregion
+    #region DLL引用
+    [LibraryImport("kernel32.dll")]
+    internal static partial nint OpenProcess(int dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, int dwProcessId);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool WriteProcessMemory(nint hProcess, nint lpBaseAddress, byte[] lpBuffer, uint nSize, out int lpNumberOfBytesWritten);
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool ReadProcessMemory(nint hProcess, nint lpBaseAddress, [Out] byte[] lpBuffer, uint dwSize, out int lpNumberOfBytesRead);
+    #endregion
 }
