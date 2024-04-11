@@ -13,13 +13,13 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</RepositoryUrl>
     <PackageTags>XFE;XFEExtension;MemoryEdit;Memory</PackageTags>
-    <PackageReleaseNotes>在实例方法中添加基址解析方法</PackageReleaseNotes>
+    <PackageReleaseNotes>添加内存监听器功能</PackageReleaseNotes>
     <Copyright>寰宇朽力网络科技版权所有</Copyright>
     <PackageProjectUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</PackageProjectUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
