@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using XFEExtension.NetCore.DelegateExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 
@@ -8,6 +9,10 @@ namespace XFEExtension.NetCore.MemoryEditor;
 /// </summary>
 public partial class MemoryEditor
 {
+    /// <summary>
+    /// 当指定地址的内存值变化时触发
+    /// </summary>
+    public event XFEEventHandler<nint, object>? ValueChanged;
     /// <summary>
     /// 目标进程
     /// </summary>
@@ -34,7 +39,7 @@ public partial class MemoryEditor
     /// 内存编辑器
     /// </summary>
     /// <param name="process"></param>
-    /// <param name="processAccessFlags">进程权限</param>
+    /// <param name="processAccessFlags">进程访问权限</param>
     public MemoryEditor(Process process, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
         TargetProcess = process;
@@ -44,7 +49,7 @@ public partial class MemoryEditor
     /// 内存编辑器
     /// </summary>
     /// <param name="processName"></param>
-    /// <param name="processAccessFlags">进程权限</param>
+    /// <param name="processAccessFlags">进程访问权限</param>
     public MemoryEditor(string processName, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
         TargetProcess = Process.GetProcessesByName(processName).First();
@@ -54,7 +59,7 @@ public partial class MemoryEditor
     /// 内存编辑器
     /// </summary>
     /// <param name="processId"></param>
-    /// <param name="processAccessFlags">进程权限</param>
+    /// <param name="processAccessFlags">进程访问权限</param>
     public MemoryEditor(int processId, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
         TargetProcess = Process.GetProcessById(processId);
@@ -65,7 +70,7 @@ public partial class MemoryEditor
     /// 获取程序句柄
     /// </summary>
     /// <param name="processId">进程ID</param>
-    /// <param name="flags">权限</param>
+    /// <param name="flags">进程访问权限</param>
     /// <returns></returns>
     public static nint GetProcessHandle(int processId, ProcessAccessFlags flags)
     {
@@ -76,7 +81,7 @@ public partial class MemoryEditor
     /// 获取程序句柄
     /// </summary>
     /// <param name="processName">进程名称</param>
-    /// <param name="flags">权限</param>
+    /// <param name="flags">进程访问权限</param>
     /// <returns></returns>
     public static nint GetProcessHandle(string processName, ProcessAccessFlags flags)
     {

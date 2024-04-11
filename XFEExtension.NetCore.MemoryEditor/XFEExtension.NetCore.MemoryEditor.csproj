@@ -30,4 +30,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="XFEExtension.NetCore" Version="2.7.1" />
+  </ItemGroup>
+
 </Project>
