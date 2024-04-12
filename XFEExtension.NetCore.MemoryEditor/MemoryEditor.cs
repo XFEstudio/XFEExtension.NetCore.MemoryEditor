@@ -203,14 +203,12 @@ public partial class MemoryEditor
             {
                 var nextAddress = ReadMemory<int>(gameProcess.Handle, resolvedAddress);
                 var pointerValue = new nint(nextAddress);
-                Trace.WriteLine(pointerValue.ToString("X"));
                 resolvedAddress = nint.Add(pointerValue, offset);
             }
             else
             {
                 var nextAddress = ReadMemory<long>(gameProcess.Handle, resolvedAddress);
                 var pointerValue = new nint(nextAddress);
-                Trace.WriteLine(pointerValue.ToString("X"));
                 resolvedAddress = nint.Add(pointerValue, offset);
             }
         }

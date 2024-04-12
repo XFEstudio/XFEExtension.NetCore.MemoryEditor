@@ -1,4 +1,5 @@
-﻿using XFEExtension.NetCore.DelegateExtension;
+﻿using System.Diagnostics;
+using XFEExtension.NetCore.DelegateExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 
@@ -31,25 +32,33 @@ public class MemoryListener : IDisposable
     public async Task StartListen<T>(nint memoryAddress, string customName = "") where T : struct
     {
         IsListening = true;
-        listeningList.Add(memoryAddress, true);
         await Task.Run(() =>
         {
             var lastValue = default(T);
             try { lastValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress); } catch { }
-            while (listeningList[memoryAddress] && IsListening)
+            listeningList.Add(memoryAddress, true);
+        ReStart:
+            try
             {
-                try
+                while (listeningList[memoryAddress] && IsListening)
                 {
-                    var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
-                    if (!currentValue.Equals(lastValue))
+                    try
                     {
-                        ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
-                        lastValue = currentValue;
+                        var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
+                        if (!currentValue.Equals(lastValue))
+                        {
+                            ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
+                            lastValue = currentValue;
+                        }
                     }
+                    catch { }
                 }
-                catch { }
+                listeningList.Remove(memoryAddress);
             }
-            listeningList.Remove(memoryAddress);
+            catch
+            {
+                goto ReStart;
+            }
         });
     }
     /// <summary>
@@ -63,25 +72,33 @@ public class MemoryListener : IDisposable
     public async Task StartListen<T>(nint memoryAddress, int delay, string customName = "") where T : struct
     {
         IsListening = true;
-        listeningList.Add(memoryAddress, true);
         await Task.Run(() =>
         {
             var lastValue = default(T);
             try { lastValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress); } catch { }
-            while (listeningList[memoryAddress] && IsListening)
+            listeningList.Add(memoryAddress, true);
+        ReStart:
+            try
             {
-                try
+                while (listeningList[memoryAddress] && IsListening)
                 {
-
-                    var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
-                    if (!currentValue.Equals(lastValue))
+                    try
                     {
-                        ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
-                        currentValue = lastValue;
+
+                        var currentValue = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress);
+                        if (!currentValue.Equals(lastValue))
+                        {
+                            ValueChanged?.Invoke(memoryAddress, new(lastValue, currentValue, customName));
+                            currentValue = lastValue;
+                        }
+                        Thread.Sleep(delay);
                     }
-                    Thread.Sleep(delay);
+                    catch { }
                 }
-                catch { }
+            }
+            catch
+            {
+                goto ReStart;
             }
             listeningList.Remove(memoryAddress);
         });
