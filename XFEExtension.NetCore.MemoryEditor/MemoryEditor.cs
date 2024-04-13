@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Net;
 using System.Runtime.InteropServices;
 using XFEExtension.NetCore.DelegateExtension;
 
@@ -8,12 +7,14 @@ namespace XFEExtension.NetCore.MemoryEditor;
 /// <summary>
 /// 内存编辑器
 /// </summary>
-public partial class MemoryEditor
+public partial class MemoryEditor : IDisposable
 {
+    private bool disposedValue;
+
     /// <summary>
     /// 当指定地址的内存值变化时触发
     /// </summary>
-    public event XFEEventHandler<nint, MemoryValue>? ValueChanged;
+    public event XFEEventHandler<nint?, MemoryValue>? ValueChanged;
     /// <summary>
     /// 目标进程
     /// </summary>
@@ -35,15 +36,17 @@ public partial class MemoryEditor
     /// </summary>
     /// <typeparam name="T">目标类型（int,float,long等）</typeparam>
     /// <param name="address">指定地址</param>
-    /// <returns></returns>
-    public T ReadMemory<T>(nint address) where T : struct => ReadMemory<T>(ProcessHandle, address);
+    /// <param name="result">读取结果</param>
+    /// <returns>是否读取成功</returns>
+    public bool ReadMemory<T>(nint address, out T result) where T : struct => ReadMemory<T>(ProcessHandle, address, out result);
     /// <summary>
     /// 在指定内存地址中写入数据
     /// </summary>
     /// <typeparam name="T">数据类型（int,float,long等）</typeparam>
     /// <param name="address">目标地址</param>
     /// <param name="source">待写入值</param>
-    public void WriteMemory<T>(nint address, T source) where T : struct => WriteMemory<T>(ProcessHandle, address, source);
+    /// <returns>是否写入成功</returns>
+    public bool WriteMemory<T>(nint address, T source) where T : struct => WriteMemory<T>(ProcessHandle, address, source);
     /// <summary>
     /// 添加监听器
     /// </summary>
@@ -60,10 +63,39 @@ public partial class MemoryEditor
     /// <param name="customName">自定义监听器标识名</param>
     public void AddListener<T>(nint address, int delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(address, delay, customName);
     /// <summary>
+    /// 添加监听器
+    /// </summary>
+    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
+    /// <param name="address">待监听的内存地址</param>
+    /// <param name="delay">检测频率</param>
+    /// <param name="customName">自定义监听器标识名</param>
+    public void AddListener<T>(nint address, TimeSpan delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(address, delay, customName);
+    /// <summary>
+    /// 添加监听器
+    /// </summary>
+    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
+    /// <param name="getMemoryAddressFunc">动态获取内存地址的方法</param>
+    /// <param name="delay">检测频率，以毫秒为单位</param>
+    /// <param name="customName">自定义监听器标识名</param>
+    public void AddListener<T>(Func<nint?> getMemoryAddressFunc, int delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(getMemoryAddressFunc, delay, customName);
+    /// <summary>
+    /// 添加监听器
+    /// </summary>
+    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
+    /// <param name="getMemoryAddressFunc">动态获取内存地址的方法</param>
+    /// <param name="delay">检测频率</param>
+    /// <param name="customName">自定义监听器标识名</param>
+    public void AddListener<T>(Func<nint?> getMemoryAddressFunc, TimeSpan delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(getMemoryAddressFunc, delay, customName);
+    /// <summary>
     /// 移除并停止指定监听器
     /// </summary>
     /// <param name="address">监听地址</param>
     public void RemoveListener(nint address) => Listener.StopListener(address);
+    /// <summary>
+    /// 移除并停止指定监听器
+    /// </summary>
+    /// <param name="customName">自定义名称</param>
+    public void RemoveListener(string customName) => Listener.StopListener(customName);
     /// <summary>
     /// 移除所有监听器
     /// </summary>
@@ -75,7 +107,15 @@ public partial class MemoryEditor
     /// <param name="baseAddress">基址的地址部分</param>
     /// <param name="offsets">基址的偏移组</param>
     /// <returns>实际地址</returns>
-    public nint ResolvePointerAddress(string moduleName, int baseAddress, params int[] offsets) => ResolvePointerAddress(TargetProcess.ProcessName, moduleName, baseAddress, ProcessBiteType, offsets);
+    public nint ResolvePointerAddress(string moduleName, int baseAddress, params nint[] offsets) => ResolvePointerAddress(TargetProcess, moduleName, baseAddress, ProcessBiteType, offsets);
+    /// <summary>
+    /// 解析基址对应的实际地址
+    /// </summary>
+    /// <param name="moduleBaseAddress">模块地址（基址的进程部分，可以是DLL等）</param>
+    /// <param name="baseAddress">基址的地址部分</param>
+    /// <param name="offsets">基址的偏移组</param>
+    /// <returns>实际地址</returns>
+    public nint ResolvePointerAddress(nint moduleBaseAddress, int baseAddress, params nint[] offsets) => ResolvePointerAddress(TargetProcess, moduleBaseAddress, baseAddress, ProcessBiteType, offsets);
     /// <summary>
     /// 内存编辑器
     /// </summary>
@@ -118,6 +158,41 @@ public partial class MemoryEditor
         Listener = new(ProcessHandle);
         Listener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
     }
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    /// <param name="disposing"></param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                Listener.Dispose();
+            }
+
+            // TODO: 释放未托管的资源(未托管的对象)并重写终结器
+            // TODO: 将大型字段设置为 null
+            disposedValue = true;
+        }
+    }
+
+    // // TODO: 仅当“Dispose(bool disposing)”拥有用于释放未托管资源的代码时才替代终结器
+    // ~MemoryEditor()
+    // {
+    //     // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
+    //     Dispose(disposing: false);
+    // }
+
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public void Dispose()
+    {
+        // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
     #region 静态方法
     /// <summary>
     /// 获取程序句柄
@@ -147,18 +222,20 @@ public partial class MemoryEditor
     /// <typeparam name="T">目标类型（int,float,long等）</typeparam>
     /// <param name="processHandle">进程句柄</param>
     /// <param name="address">指定地址</param>
-    /// <returns></returns>
-    public static T ReadMemory<T>(nint processHandle, nint address) where T : struct
+    /// <param name="result">读取结果</param>
+    /// <returns>是否读取成功</returns>
+    public static bool ReadMemory<T>(nint processHandle, nint address, out T result) where T : struct
     {
         unsafe
         {
             var size = Marshal.SizeOf<T>();
             var buffer = new byte[size];
-            ReadProcessMemory(processHandle, address, buffer, (uint)size, out _);
+            var boolResult = ReadProcessMemory(processHandle, address, buffer, (uint)size, out _);
             fixed (byte* pBuffer = buffer)
             {
-                return Marshal.PtrToStructure<T>((nint)pBuffer);
+                result = Marshal.PtrToStructure<T>((nint)pBuffer);
             }
+            return boolResult;
         }
     }
     /// <summary>
@@ -168,46 +245,52 @@ public partial class MemoryEditor
     /// <param name="processHandle">进程句柄</param>
     /// <param name="address">目标地址</param>
     /// <param name="source">待写入值</param>
-    public static void WriteMemory<T>(nint processHandle, nint address, T source) where T : struct
+    /// <returns>是否写入成功</returns>
+    public static bool WriteMemory<T>(nint processHandle, nint address, T source) where T : struct
     {
         var buffer = StructureToByteArray(source);
-        WriteProcessMemory(processHandle, address, buffer, (uint)buffer.Length, out _);
+        return WriteProcessMemory(processHandle, address, buffer, (uint)buffer.Length, out _);
     }
     /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>
-    /// <param name="processName">进程名称</param>
+    /// <param name="process">主进程</param>
     /// <param name="moduleName">模块名称（基址的进程部分，可以是DLL等）</param>
     /// <param name="baseAddress">基址的地址部分</param>
     /// <param name="processType">目标进程类型</param>
     /// <param name="offsets">基址的偏移组</param>
     /// <returns>实际地址</returns>
-    public static nint ResolvePointerAddress(string processName, string moduleName, int baseAddress, ProcessType processType, params int[] offsets)
+    public static nint ResolvePointerAddress(Process process, string moduleName, int baseAddress, ProcessType processType, params nint[] offsets) => ResolvePointerAddress(process, GetModuleBaseAddress(process, moduleName), baseAddress, processType, offsets);
+    /// <summary>
+    /// 解析基址对应的实际地址
+    /// </summary>
+    /// <param name="process">主进程</param>
+    /// <param name="moduleBaseAddress">模块地址（基址的进程部分，可以是DLL等）</param>
+    /// <param name="baseAddress">基址的地址部分</param>
+    /// <param name="processType">目标进程类型</param>
+    /// <param name="offsets">基址的偏移组</param>
+    /// <returns>实际地址</returns>
+    public static nint ResolvePointerAddress(Process process, nint moduleBaseAddress, int baseAddress, ProcessType processType, params nint[] offsets)
     {
-        var gameProcess = GetGameProcessByName(processName);
-        if (gameProcess == null)
-        {
-            Trace.WriteLine("游戏进程未找到！");
-            return nint.Zero;
-        }
-        var moduleBaseAddress = GetModuleBaseAddress(gameProcess, moduleName);
-        if (moduleBaseAddress == nint.Zero)
-        {
-            Trace.WriteLine($"未找到模块：{moduleName}");
-            return nint.Zero;
-        }
         var resolvedAddress = nint.Add(moduleBaseAddress, baseAddress);
-        foreach (int offset in offsets)
+        if (processType == ProcessType.Bit32)
         {
-            if (processType == ProcessType.Bit32)
+            foreach (int offset in offsets)
             {
-                var nextAddress = ReadMemory<int>(gameProcess.Handle, resolvedAddress);
+                var success = ReadMemory(process.Handle, resolvedAddress, out int nextAddress);
+                if (!success || nextAddress == nint.Zero)
+                    return nint.Zero;
                 var pointerValue = new nint(nextAddress);
                 resolvedAddress = nint.Add(pointerValue, offset);
             }
-            else
+        }
+        else
+        {
+            foreach (int offset in offsets)
             {
-                var nextAddress = ReadMemory<long>(gameProcess.Handle, resolvedAddress);
+                var success = ReadMemory(process.Handle, resolvedAddress, out long nextAddress);
+                if (!success || nextAddress == nint.Zero)
+                    return nint.Zero;
                 var pointerValue = new nint(nextAddress);
                 resolvedAddress = nint.Add(pointerValue, offset);
             }
