@@ -5,9 +5,9 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 /// <summary>
 /// 动态内存管理器
 /// </summary>
-public abstract class DynamicManager : MemoryManager
+public abstract class DynamicMemoryManager : MemoryManager
 {
-    internal DynamicManager(nint processHandler) : base(processHandler)
+    internal DynamicMemoryManager(nint processHandler) : base(processHandler)
     {
     }
     /// <summary>
@@ -33,11 +33,6 @@ public abstract class DynamicManager : MemoryManager
     /// </summary>
     /// <returns></returns>
     public override IEnumerator GetEnumerator() => memoryAddressGetFuncDictionary.Values.GetEnumerator();
-    /// <summary>
-    /// 释放资源
-    /// </summary>
-    /// <param name="disposing"></param>
-    protected override void Dispose(bool disposing) => base.Dispose(disposing);
     /// <summary>
     /// 移除指定名称的地址
     /// </summary>

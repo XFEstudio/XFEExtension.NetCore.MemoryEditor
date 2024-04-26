@@ -13,7 +13,7 @@ public abstract class MemoryManager(nint processHandler) : IDisposable, IEnumera
     /// <summary>
     /// 监听器
     /// </summary>
-    public MemoryListener Listener { get; protected set; } = new(processHandler);
+    public MemoryListenerManager Listener { get; protected set; } = new(processHandler);
     /// <summary>
     /// 现成句柄
     /// </summary>
@@ -46,7 +46,7 @@ public abstract class MemoryManager(nint processHandler) : IDisposable, IEnumera
     /// 释放资源
     /// </summary>
     /// <param name="disposing"></param>
-    protected virtual void Dispose(bool disposing)
+    private protected virtual void Dispose(bool disposing)
     {
         if (!disposedValue)
         {

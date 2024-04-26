@@ -5,9 +5,9 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 /// <summary>
 /// 静态内存管理器
 /// </summary>
-public abstract class StaticManager : MemoryManager
+public abstract class StaticMemoryManager : MemoryManager
 {
-    internal StaticManager(nint processHandler) : base(processHandler)
+    internal StaticMemoryManager(nint processHandler) : base(processHandler)
     {
     }
 
@@ -58,11 +58,6 @@ public abstract class StaticManager : MemoryManager
     /// </summary>
     /// <returns></returns>
     public override IEnumerator GetEnumerator() => AddressDictionary.GetEnumerator();
-    /// <summary>
-    /// 释放资源
-    /// </summary>
-    /// <param name="disposing"></param>
-    protected override void Dispose(bool disposing) => base.Dispose(disposing);
     /// <summary>
     /// 释放资源
     /// </summary>

@@ -10,7 +10,6 @@ namespace XFEExtension.NetCore.MemoryEditor;
 public partial class MemoryEditor : IDisposable
 {
     private bool disposedValue;
-
     /// <summary>
     /// 当指定地址的内存值变化时触发
     /// </summary>
@@ -26,7 +25,7 @@ public partial class MemoryEditor : IDisposable
     /// <summary>
     /// 内存监听器
     /// </summary>
-    public MemoryListener Listener { get; set; }
+    public MemoryListenerManager Listener { get; set; }
     /// <summary>
     /// 进程位数类型（32/64）
     /// </summary>
@@ -170,26 +169,14 @@ public partial class MemoryEditor : IDisposable
             {
                 Listener.Dispose();
             }
-
-            // TODO: 释放未托管的资源(未托管的对象)并重写终结器
-            // TODO: 将大型字段设置为 null
             disposedValue = true;
         }
     }
-
-    // // TODO: 仅当“Dispose(bool disposing)”拥有用于释放未托管资源的代码时才替代终结器
-    // ~MemoryEditor()
-    // {
-    //     // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
-    //     Dispose(disposing: false);
-    // }
-
     /// <summary>
     /// 释放资源
     /// </summary>
     public void Dispose()
     {
-        // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
@@ -239,6 +226,30 @@ public partial class MemoryEditor : IDisposable
         }
     }
     /// <summary>
+    /// 读取指定地址的内存<br/>
+    /// 如非有意使用，请转到<seealso cref="ReadMemory{T}(nint, nint, out T)"/>
+    /// </summary>
+    /// <param name="processHandle">进程句柄</param>
+    /// <param name="address">指定地址</param>
+    /// <param name="type">目标类型（int,float,long等）</param>
+    /// <returns>读取结果</returns>
+    public static object? ReadMemory(nint processHandle, nint address, Type type)
+    {
+        unsafe
+        {
+            var size = Marshal.SizeOf(type);
+            var buffer = new byte[size];
+            if (ReadProcessMemory(processHandle, address, buffer, (uint)size, out _))
+            {
+                fixed (byte* pBuffer = buffer)
+                {
+                    return Marshal.PtrToStructure((nint)pBuffer, type);
+                }
+            }
+            return null;
+        }
+    }
+    /// <summary>
     /// 在指定内存中写入数据
     /// </summary>
     /// <typeparam name="T">数据类型（int,float,long等）</typeparam>
@@ -275,24 +286,24 @@ public partial class MemoryEditor : IDisposable
         var resolvedAddress = nint.Add(moduleBaseAddress, baseAddress);
         if (processType == ProcessType.Bit32)
         {
-            foreach (int offset in offsets)
+            foreach (nint offset in offsets)
             {
                 var success = ReadMemory(process.Handle, resolvedAddress, out int nextAddress);
                 if (!success || nextAddress == nint.Zero)
                     return nint.Zero;
                 var pointerValue = new nint(nextAddress);
-                resolvedAddress = nint.Add(pointerValue, offset);
+                resolvedAddress = pointerValue + offset;
             }
         }
         else
         {
-            foreach (int offset in offsets)
+            foreach (nint offset in offsets)
             {
                 var success = ReadMemory(process.Handle, resolvedAddress, out long nextAddress);
                 if (!success || nextAddress == nint.Zero)
                     return nint.Zero;
                 var pointerValue = new nint(nextAddress);
-                resolvedAddress = nint.Add(pointerValue, offset);
+                resolvedAddress = pointerValue + offset;
             }
         }
         return resolvedAddress;

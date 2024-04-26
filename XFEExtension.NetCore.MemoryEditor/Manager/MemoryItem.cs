@@ -3,8 +3,12 @@
 /// <summary>
 /// 内存条目
 /// </summary>
-public abstract class MemoryItem(string name)
+/// <typeparam name="T">地址类型</typeparam>
+/// <param name="name">名称</param>
+/// <param name="memoryListener">监听器</param>
+public abstract class MemoryItem<T>(string name, MemoryListenerManager memoryListener)
 {
+    private protected MemoryListenerManager memoryListener = memoryListener;
     /// <summary>
     /// 内存地址标识名
     /// </summary>
@@ -20,7 +24,7 @@ public abstract class MemoryItem(string name)
     /// <summary>
     /// 该地址是否存在监听器
     /// </summary>
-    public bool HasListener { get; set; }
+    public bool HasListener { get; protected set; }
     /// <summary>
     /// 添加监听器
     /// </summary>
