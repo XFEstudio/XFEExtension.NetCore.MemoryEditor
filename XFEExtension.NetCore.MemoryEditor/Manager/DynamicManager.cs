@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace XFEExtension.NetCore.MemoryEditor;
+namespace XFEExtension.NetCore.MemoryEditor.Manager;
 
 /// <summary>
 /// 动态内存管理器
