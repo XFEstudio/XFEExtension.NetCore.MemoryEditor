@@ -24,20 +24,17 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// <summary>
     /// 监听器自定义标识名
     /// </summary>
-    public string Name
-    {
-        get { return name; }
-        set { name = value; }
-    }
-    private protected Type memoryAddressType = memoryAddressType;
+    public string Name { get => name; }
+    private protected TimeSpan frequency;
+    /// <summary>
+    /// 监听检测频率
+    /// </summary>
+    public TimeSpan Frequency { get => frequency; }
+    private protected readonly Type memoryAddressType = memoryAddressType;
     /// <summary>
     /// 内存地址类型
     /// </summary>
-    public Type MemoryAddressType
-    {
-        get { return memoryAddressType; }
-        set { memoryAddressType = value; }
-    }
+    public Type MemoryAddressType { get => memoryAddressType; }
     /// <summary>
     /// 是否正在监听
     /// </summary>
@@ -50,7 +47,7 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// <summary>
     /// 当前进程句柄
     /// </summary>
-    public nint ProcessHandler { get => processHandler; }
+    public nint ProcessHandler { get => processHandler; set => processHandler = value; }
     /// <summary>
     /// 当前的监听线程
     /// </summary>
@@ -67,6 +64,7 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
         if (isListening)
             throw new InvalidOperationException("监听已启动，无法重复启动监听");
         isListening = true;
+        this.frequency = frequency;
         this.processHandler = processHandler;
         await Task.CompletedTask;
     }
@@ -129,4 +127,12 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// <param name="memoryAddressType">内存地址数据类型</param>
     /// <returns></returns>
     public static StaticMemoryListener CreateStaticListener(string customName, nint memoryAddress, Type memoryAddressType) => new StaticMemoryListenerImpl(customName, memoryAddress, memoryAddressType);
+    /// <summary>
+    /// 创建可更新的内存地址监听器
+    /// </summary>
+    /// <param name="customName">监听器自定义标识名</param>
+    /// <param name="memoryAddressUpdateFunc">存地址动态更新方法</param>
+    /// <param name="memoryAddressType">内存地址数据类型</param>
+    /// <returns></returns>
+    public static UpdatableMemoryListener CreateUpdatableListener(string customName, Func<nint?> memoryAddressUpdateFunc, Type memoryAddressType) => new UpdatableMemoryListenerImpl(customName, memoryAddressUpdateFunc, memoryAddressType);
 }

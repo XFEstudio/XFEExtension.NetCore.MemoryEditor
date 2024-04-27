@@ -3,15 +3,15 @@
 namespace XFEExtension.NetCore.MemoryEditor;
 
 /// <summary>
-/// 内存静态监听器
+/// 可更新的内存监听器
 /// </summary>
-/// <param name="customName">监听器自定义标识名</param>
-/// <param name="memoryAddress">内存地址</param>
-/// <param name="memoryAddressType">内存地址数据类型</param>
+/// <param name="customName"></param>
+/// <param name="updateAddressFunc"></param>
+/// <param name="memoryAddressType"></param>
 [CreateImpl]
-public abstract class StaticMemoryListener(string customName, nint memoryAddress, Type memoryAddressType) : MemoryListener(customName, memoryAddressType)
+public abstract class UpdatableMemoryListener(string customName, Func<nint?> updateAddressFunc, Type memoryAddressType) : MemoryListener(customName, memoryAddressType)
 {
-    private nint memoryAddress = memoryAddress;
+    private nint memoryAddress = updateAddressFunc.Invoke() ?? default;
     /// <summary>
     /// 内存地址
     /// </summary>
@@ -20,6 +20,11 @@ public abstract class StaticMemoryListener(string customName, nint memoryAddress
         get { return memoryAddress; }
         set { memoryAddress = value; }
     }
+    private Func<nint?> updateAddressFunc = updateAddressFunc;
+    /// <summary>
+    /// 获取目标内存地址方法
+    /// </summary>
+    public Func<nint?> UpdateAddressFunc { get => updateAddressFunc; set => updateAddressFunc = value; }
     /// <summary>
     /// 开始监听
     /// </summary>
@@ -50,4 +55,8 @@ public abstract class StaticMemoryListener(string customName, nint memoryAddress
         });
         await CurrentListeningTask;
     }
+    /// <summary>
+    /// 更新地址值
+    /// </summary>
+    public void UpdateAddress() => memoryAddress = updateAddressFunc.Invoke() ?? memoryAddress;
 }

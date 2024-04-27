@@ -50,7 +50,7 @@ public abstract class DynamicMemoryListener(string customName, Func<nint?> getAd
                     var currentValue = MemoryEditor.ReadMemory(processHandler, memoryAddress!.Value, memoryAddressType);
                     if (lastValue is null == currentValue is null || lastValue?.Equals(currentValue) == false)
                     {
-                        valueChanged?.Invoke(this, new(lastValue is not null, currentValue is not null, lastValue, currentValue, customName));
+                        valueChanged?.Invoke(this, new(lastValue is not null, currentValue is not null, lastValue, currentValue, name));
                         lastValue = currentValue;
                     }
                     await Task.Delay(frequency);

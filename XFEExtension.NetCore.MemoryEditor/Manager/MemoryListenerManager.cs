@@ -10,14 +10,11 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 public class MemoryListenerManager : IDisposable, IEnumerable
 {
     private bool disposedValue;
-    private readonly List<nint> addressListToListen = [];
-    private readonly Dictionary<string, Func<nint?>> addressFuncDictionaryToListen = [];
-    private readonly Dictionary<nint, bool> listeningAddressDictionary = [];
-    private readonly Dictionary<string, bool> listeningAddressFuncDictionary = [];
+    private readonly Dictionary<string, MemoryListener> listenerDictionary = [];
     /// <summary>
     /// 当监听值发生改变时触发
     /// </summary>
-    public event XFEEventHandler<MemoryValue>? ValueChanged;
+    public event XFEEventHandler<MemoryListener, MemoryValue>? ValueChanged;
     /// <summary>
     /// 当前进程结束时触发
     /// </summary>
@@ -40,208 +37,112 @@ public class MemoryListenerManager : IDisposable, IEnumerable
                 currentProcess?.Dispose();
                 currentProcess = value;
                 ProcessHandler = MemoryEditor.GetProcessHandle(value.Id, ProcessAccessFlags.All);
-                isCurrentProcessRunning = true;
-                currentProcess.Exited += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
-                foreach (var address in addressListToListen)
+                currentProcess.Exited += CurrentProcess_Exited;
+                if (IsListening)
                 {
-
+                    foreach (var listener in listenerDictionary.Values)
+                    {
+                        if (listener is UpdatableMemoryListener updatableMemoryListener)
+                            updatableMemoryListener.UpdateAddress();
+                        if (!listener.IsListening)
+                            _ = listener.StartListen(ProcessHandler, listener.Frequency);
+                    }
                 }
             }
         }
+    }
+    private async void CurrentProcess_Exited(object? sender, EventArgs e)
+    {
+        CurrentProcessExit?.Invoke(sender, e);
+        await StopListeners();
     }
     /// <summary>
     /// 是否启用监听
     /// </summary>
     public bool IsListening { get; set; }
     /// <summary>
-    /// 开始监听
+    /// 索引器
     /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="memoryAddress">待监听的内存地址</param>
-    /// <param name="customName">自定义监听器标识名</param>
+    /// <param name="customName">监听器自定义标识名</param>
     /// <returns></returns>
-    public async Task StartListen<T>(nint memoryAddress, string? customName = null) where T : struct
+    public MemoryListener this[string customName]
     {
-        IsListening = true;
-        await Task.Run(() =>
-        {
-            bool lastSuccess = false;
-            var lastValue = default(T);
-            try { lastSuccess = MemoryEditor.ReadMemory(ProcessHandler, memoryAddress, out lastValue); } catch { }
-            addressListToListen.Add(memoryAddress);
-            listeningAddressDictionary.Add(memoryAddress, true);
-        ReStart:
-            try
-            {
-                while (listeningAddressDictionary[memoryAddress] && IsListening && isCurrentProcessRunning)
-                {
-                    try
-                    {
-                        var currentSuccess = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress, out var currentValue);
-                        if (!currentValue.Equals(lastValue) || lastSuccess != currentSuccess)
-                        {
-                            ValueChanged?.Invoke(memoryAddress, new(lastSuccess, currentSuccess, lastValue, currentValue, customName));
-                            lastValue = currentValue;
-                            lastSuccess = currentSuccess;
-                        }
-                    }
-                    catch { }
-                }
-                listeningAddressDictionary.Remove(memoryAddress);
-            }
-            catch
-            {
-                goto ReStart;
-            }
-        });
+        get => listenerDictionary[customName];
+        set => listenerDictionary[customName] = value;
     }
     /// <summary>
     /// 开始监听
     /// </summary>
     /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="memoryAddress">待监听的内存地址</param>
-    /// <param name="delay">检测频率，以毫秒为单位</param>
     /// <param name="customName">自定义监听器标识名</param>
+    /// <param name="memoryAddress">待监听的内存地址</param>
+    /// <param name="frequency">检测频率，以毫秒为单位</param>
     /// <returns></returns>
-    public async Task StartListen<T>(nint memoryAddress, int delay, string? customName = null) where T : struct => await StartListen<T>(memoryAddress, TimeSpan.FromMilliseconds(delay), customName);
+    public MemoryListener AddListener<T>(string customName, nint memoryAddress, int frequency = 1) where T : struct => AddListener<T>(customName
+        , memoryAddress, TimeSpan.FromMilliseconds(frequency));
     /// <summary>
     /// 开始监听
     /// </summary>
     /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="memoryAddress">待监听的内存地址</param>
-    /// <param name="delay">检测频率</param>
     /// <param name="customName">自定义监听器标识名</param>
+    /// <param name="memoryAddress">待监听的内存地址</param>
+    /// <param name="frequency">检测频率</param>
     /// <returns></returns>
-    public async Task StartListen<T>(nint memoryAddress, TimeSpan delay, string? customName = null) where T : struct
+    public MemoryListener AddListener<T>(string customName, nint memoryAddress, TimeSpan frequency) where T : struct
     {
-        IsListening = true;
-        await Task.Run(async () =>
-        {
-            bool lastSuccess = false;
-            var lastValue = default(T);
-            try { lastSuccess = MemoryEditor.ReadMemory(ProcessHandler, memoryAddress, out lastValue); } catch { }
-            addressListToListen.Add(memoryAddress);
-            listeningAddressDictionary.Add(memoryAddress, true);
-        ReStart:
-            try
-            {
-                while (listeningAddressDictionary[memoryAddress] && IsListening && isCurrentProcessRunning)
-                {
-                    try
-                    {
-                        var currentSuccess = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress, out var currentValue);
-                        if (!currentValue.Equals(lastValue) || lastSuccess != currentSuccess)
-                        {
-                            ValueChanged?.Invoke(memoryAddress, new(lastSuccess, currentSuccess, lastValue, currentValue, customName));
-                            lastValue = currentValue;
-                            lastSuccess = currentSuccess;
-                        }
-                        await Task.Delay(delay);
-                    }
-                    catch { }
-                }
-                listeningAddressDictionary.Remove(memoryAddress);
-            }
-            catch
-            {
-                goto ReStart;
-            }
-        });
+
     }
-    /// <summary>
-    /// 开始监听
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="getMemoryAddressFunc">动态获取内存地址的方法</param>
-    /// <param name="delay">检测频率</param>
-    /// <param name="customName">自定义监听器标识名</param>
-    /// <returns></returns>
-    public async Task StartListen<T>(Func<nint?> getMemoryAddressFunc, int delay, string customName) where T : struct => await StartListen<T>(getMemoryAddressFunc, TimeSpan.FromMilliseconds(delay), customName);
-    /// <summary>
-    /// 开始监听
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="getMemoryAddressFunc">动态获取内存地址的方法</param>
-    /// <param name="delay">检测频率</param>
-    /// <param name="customName">自定义监听器标识名</param>
-    /// <returns></returns>
-    public async Task StartListen<T>(Func<nint?> getMemoryAddressFunc, TimeSpan delay, string customName) where T : struct
+    internal StaticMemoryListener AddStaticListener(string customName, nint memoryAddress, TimeSpan frequency, Type type)
     {
-        IsListening = true;
-        await Task.Run(async () =>
-        {
-            var memoryAddress = getMemoryAddressFunc.Invoke();
-            bool lastSuccess = false;
-            var lastValue = default(T);
-            if (memoryAddress is not null)
-                try { lastSuccess = MemoryEditor.ReadMemory(ProcessHandler, memoryAddress.Value, out lastValue); } catch { }
-            addressFuncDictionaryToListen.Add(customName, getMemoryAddressFunc);
-            listeningAddressFuncDictionary.Add(customName, true);
-        ReStart:
-            try
-            {
-                while (listeningAddressFuncDictionary[customName] && IsListening && isCurrentProcessRunning)
-                {
-                    try
-                    {
-                        memoryAddress = getMemoryAddressFunc.Invoke();
-                        if (memoryAddress == 0)
-                        {
-                            if (lastSuccess)
-                                ValueChanged?.Invoke(memoryAddress, new(lastSuccess, false, lastValue, null, customName));
-                            lastSuccess = false;
-                            lastValue = default;
-                            while (memoryAddress == 0 && listeningAddressFuncDictionary[customName] && IsListening && isCurrentProcessRunning)
-                            {
-                                memoryAddress = getMemoryAddressFunc.Invoke();
-                                await Task.Delay(delay);
-                            }
-                        }
-                        var currentSuccess = MemoryEditor.ReadMemory<T>(ProcessHandler, memoryAddress!.Value, out var currentValue);
-                        if (!currentValue.Equals(lastValue) || lastSuccess != currentSuccess)
-                        {
-                            ValueChanged?.Invoke(memoryAddress, new(lastSuccess, currentSuccess, lastValue, currentValue, customName));
-                            lastValue = currentValue;
-                            lastSuccess = currentSuccess;
-                        }
-                        await Task.Delay(delay);
-                    }
-                    catch { }
-                }
-                listeningAddressFuncDictionary.Remove(customName);
-            }
-            catch
-            {
-                goto ReStart;
-            }
-        });
+        if (!IsListening)
+            IsListening = true;
+        var staticMemoryListener = MemoryListener.CreateStaticListener(customName, memoryAddress, type);
+        _ = staticMemoryListener.StartListen(ProcessHandler, frequency);
+        return staticMemoryListener;
+    }
+    internal DynamicMemoryListener AddDynamicListener(string customName, Func<nint?> memoryAddressGetFunc, TimeSpan frequency, Type type)
+    {
+        if (!IsListening)
+            IsListening = true;
+        var dynamicMemoryListener = MemoryListener.CreateDynamicListener(customName, memoryAddressGetFunc, type);
+        _ = dynamicMemoryListener.StartListen(ProcessHandler, frequency);
+        return dynamicMemoryListener;
     }
     /// <summary>
     /// 停止所有监听
     /// </summary>
-    public void StopListener()
+    public async Task StopListeners()
     {
         IsListening = false;
-        addressListToListen.Clear();
-        addressFuncDictionaryToListen.Clear();
+        var taskList = new List<Task>();
+        foreach (var listener in listenerDictionary.Values)
+        {
+            taskList.Add(listener.StopListen());
+        }
+        await Task.WhenAll(taskList);
     }
     /// <summary>
-    /// 停止指定进程的监听
-    /// </summary>
-    /// <param name="memoryAddress">内存地址</param>
-    public void StopListener(nint memoryAddress)
-    {
-        listeningAddressDictionary[memoryAddress] = false;
-        addressListToListen.Remove(memoryAddress);
-    }
-    /// <summary>
-    /// 停止指定进程的监听
+    /// 停止指定的监听器
     /// </summary>
     /// <param name="customName">自定义名称</param>
-    public void StopListener(string customName)
+    public async Task StopListener(string customName) => await listenerDictionary[customName].StopListen();
+    /// <summary>
+    /// 移除指定监听器
+    /// </summary>
+    /// <param name="customName"></param>
+    public void RemoveListener(string customName)
     {
-        listeningAddressFuncDictionary[customName] = false;
-        addressFuncDictionaryToListen.Remove(customName);
+        listenerDictionary.Remove(customName);
+        if (listenerDictionary.Count == 0)
+            IsListening = false;
+    }
+    /// <summary>
+    /// 清除所有监听器
+    /// </summary>
+    public void Clear()
+    {
+        IsListening = false;
+        listenerDictionary.Clear();
     }
     /// <summary>
     /// 内存监听器
@@ -288,9 +189,9 @@ public class MemoryListenerManager : IDisposable, IEnumerable
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
-
-    public IEnumerator GetEnumerator()
-    {
-        throw new NotImplementedException();
-    }
+    /// <summary>
+    /// 获取枚举器
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerator GetEnumerator() => listenerDictionary.GetEnumerator();
 }
