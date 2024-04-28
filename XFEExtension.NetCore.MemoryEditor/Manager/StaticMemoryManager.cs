@@ -5,7 +5,7 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 /// <summary>
 /// 静态内存管理器
 /// </summary>
-public abstract class StaticMemoryManager : MemoryManager
+public class StaticMemoryManager : MemoryManager
 {
     /// <summary>
     /// 地址值字典
@@ -40,5 +40,5 @@ public abstract class StaticMemoryManager : MemoryManager
     /// 静态内存管理器
     /// </summary>
     /// <param name="builders">内存构建器组</param>
-    protected StaticMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
+    public StaticMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
 }

@@ -5,7 +5,7 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 /// <summary>
 /// 可更新内存管理器
 /// </summary>
-public abstract class UpdatableMemoryManager : MemoryManager
+public class UpdatableMemoryManager : MemoryManager
 {
     /// <summary>
     /// 地址值字典
@@ -40,5 +40,5 @@ public abstract class UpdatableMemoryManager : MemoryManager
     /// 可更新内存管理器
     /// </summary>
     /// <param name="builders">内存构建器组</param>
-    protected UpdatableMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
+    public UpdatableMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
 }

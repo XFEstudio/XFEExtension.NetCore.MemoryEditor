@@ -5,7 +5,7 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 /// <summary>
 /// 动态内存管理器
 /// </summary>
-public abstract class DynamicMemoryManager : MemoryManager
+public class DynamicMemoryManager : MemoryManager
 {
     /// <summary>
     /// 地址值字典
@@ -40,5 +40,5 @@ public abstract class DynamicMemoryManager : MemoryManager
     /// 动态内存管理器
     /// </summary>
     /// <param name="builders">内存构建器组</param>
-    protected DynamicMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
+    public DynamicMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
 }
