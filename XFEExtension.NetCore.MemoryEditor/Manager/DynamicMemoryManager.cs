@@ -7,35 +7,38 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 /// </summary>
 public abstract class DynamicMemoryManager : MemoryManager
 {
-    internal DynamicMemoryManager(nint processHandler) : base(processHandler)
-    {
-    }
+    /// <summary>
+    /// 地址值字典
+    /// </summary>
+    public Dictionary<string, DynamicMemoryItem> ItemDictionary { get; set; } = [];
     /// <summary>
     /// 索引器
     /// </summary>
-    /// <param name="addressName">地址名称</param>
+    /// <param name="addressName">地址标识名</param>
     /// <returns></returns>
-    public override nint? this[string addressName] => memoryAddressGetFuncDictionary[addressName].Invoke();
-    /// <summary>
-    /// 添加地址
-    /// </summary>
-    /// <param name="addressName">标识名称</param>
-    /// <param name="addressGetFunc">地址的获取方法</param>
-    public override void Add(string addressName, Func<nint?> addressGetFunc) => memoryAddressGetFuncDictionary.Add(addressName, addressGetFunc);
-    /// <summary>
-    /// 设置指定名称的地址的获取方法
-    /// </summary>
-    /// <param name="addressName">地址标识名称</param>
-    /// <param name="newAddressGetFun">新的获取方法</param>
-    public override void Set(string addressName, Func<nint?> newAddressGetFun) => memoryAddressGetFuncDictionary[addressName] = newAddressGetFun;
+    public DynamicMemoryItem this[string addressName] => ItemDictionary[addressName];
+    internal override void Add(MemoryItemBuilder builder)
+    {
+        if (builder.DynamicMemoryAddress is null)
+            throw new ArgumentNullException(nameof(builder), "对于动态地址管理器，构建器的动态地址不可为空");
+        var dynamicMemoryItem = new DynamicMemoryItemImpl(builder.Name, builder.DynamicMemoryAddress, builder.MemoryAddressType, Editor);
+        if (builder.HasListener)
+            dynamicMemoryItem.AddListener(builder.ListenerFrequency, builder.StartListen);
+        ItemDictionary.Add(builder.Name, dynamicMemoryItem);
+    }
     /// <summary>
     /// 获取枚举器
     /// </summary>
     /// <returns></returns>
-    public override IEnumerator GetEnumerator() => memoryAddressGetFuncDictionary.Values.GetEnumerator();
+    public override IEnumerator GetEnumerator() => ItemDictionary.GetEnumerator();
     /// <summary>
-    /// 移除指定名称的地址
+    /// 释放资源
     /// </summary>
     /// <param name="addressName">地址标识名称</param>
-    public override void Remove(string addressName) => memoryAddressGetFuncDictionary.Remove(addressName);
+    public override void Remove(string addressName) => ItemDictionary.Remove(addressName);
+    /// <summary>
+    /// 动态内存管理器
+    /// </summary>
+    /// <param name="builders">内存构建器组</param>
+    protected DynamicMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
 }

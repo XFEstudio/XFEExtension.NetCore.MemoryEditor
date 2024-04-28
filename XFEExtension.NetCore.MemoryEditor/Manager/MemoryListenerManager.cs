@@ -7,7 +7,7 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 /// <summary>
 /// 内存监听器
 /// </summary>
-public class MemoryListenerManager : IDisposable, IEnumerable
+public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEnumerable
 {
     private bool disposedValue;
     private readonly Dictionary<string, MemoryListener> listenerDictionary = [];
@@ -20,46 +20,90 @@ public class MemoryListenerManager : IDisposable, IEnumerable
     /// </summary>
     public event EventHandler? CurrentProcessExit;
     /// <summary>
+    /// 目标进程启动时触发
+    /// </summary>
+    public event EventHandler? CurrentProcessEntered;
+    /// <summary>
     /// 进程句柄
     /// </summary>
     public nint ProcessHandler { get; set; }
+    private string processName = string.Empty;
+    /// <summary>
+    /// 目标进程名称
+    /// </summary>
+    public string ProcessName
+    {
+        get { return processName; }
+        set { processName = value; }
+    }
     private Process? currentProcess;
     /// <summary>
     /// 当前监听内存的目标进程
     /// </summary>
     public Process? CurrentProcess
     {
-        get { return currentProcess; }
+        get => currentProcess;
         set
         {
             if (value is not null)
             {
                 currentProcess?.Dispose();
                 currentProcess = value;
-                ProcessHandler = MemoryEditor.GetProcessHandle(value.Id, ProcessAccessFlags.All);
+                ProcessName = value.ProcessName;
+                ProcessHandler = MemoryEditor.GetProcessHandle(value.Id, ProcessAccessFlags);
                 currentProcess.Exited += CurrentProcess_Exited;
                 if (IsListening)
                 {
                     foreach (var listener in listenerDictionary.Values)
                     {
                         if (listener is UpdatableMemoryListener updatableMemoryListener)
-                            updatableMemoryListener.UpdateAddress();
+                            updatableMemoryListener.UpdateAddress(ProcessHandler);
                         if (!listener.IsListening)
+                        {
+                            listener.ProcessHandler = ProcessHandler;
                             _ = listener.StartListen(ProcessHandler, listener.Frequency);
+                        }
                     }
                 }
+                CurrentProcessEntered?.Invoke(value, EventArgs.Empty);
             }
         }
     }
     private async void CurrentProcess_Exited(object? sender, EventArgs e)
     {
         CurrentProcessExit?.Invoke(sender, e);
+        if (AutoReacquireProcess)
+            _ = Task.Run(async () =>
+            {
+                while (currentProcess is null || currentProcess.HasExited)
+                {
+                    var result = Process.GetProcessesByName(ProcessName);
+                    if (result is not null && result.Length >= 1)
+                    {
+                        CurrentProcess = result[0];
+                        return;
+                    }
+                    await Task.Delay(AutoReacquireProcessFrequency);
+                }
+            });
         await StopListeners();
     }
     /// <summary>
     /// 是否启用监听
     /// </summary>
     public bool IsListening { get; set; }
+    /// <summary>
+    /// 当目标进程退出后，是否自动重新获取进程
+    /// </summary>
+    public bool AutoReacquireProcess { get; set; }
+    /// <summary>
+    /// 自动重新获取进程的检测频率（单位毫秒）
+    /// </summary>
+    public int AutoReacquireProcessFrequency { get; set; } = 500;
+    /// <summary>
+    /// 进程句柄权限
+    /// </summary>
+    public ProcessAccessFlags ProcessAccessFlags { get; set; } = ProcessAccessFlags.All;
     /// <summary>
     /// 索引器
     /// </summary>
@@ -70,48 +114,35 @@ public class MemoryListenerManager : IDisposable, IEnumerable
         get => listenerDictionary[customName];
         set => listenerDictionary[customName] = value;
     }
-    /// <summary>
-    /// 开始监听
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="customName">自定义监听器标识名</param>
-    /// <param name="memoryAddress">待监听的内存地址</param>
-    /// <param name="frequency">检测频率，以毫秒为单位</param>
-    /// <returns></returns>
-    public MemoryListener AddListener<T>(string customName, nint memoryAddress, int frequency = 1) where T : struct => AddListener<T>(customName
-        , memoryAddress, TimeSpan.FromMilliseconds(frequency));
-    /// <summary>
-    /// 开始监听
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="customName">自定义监听器标识名</param>
-    /// <param name="memoryAddress">待监听的内存地址</param>
-    /// <param name="frequency">检测频率</param>
-    /// <returns></returns>
-    public MemoryListener AddListener<T>(string customName, nint memoryAddress, TimeSpan frequency) where T : struct
-    {
-
-    }
-    internal StaticMemoryListener AddStaticListener(string customName, nint memoryAddress, TimeSpan frequency, Type type)
+    internal override StaticMemoryListener AddStaticListener(string customName, nint memoryAddress, TimeSpan? frequency, Type type, bool startListen)
     {
         if (!IsListening)
             IsListening = true;
         var staticMemoryListener = MemoryListener.CreateStaticListener(customName, memoryAddress, type);
-        _ = staticMemoryListener.StartListen(ProcessHandler, frequency);
+        if (startListen)
+            _ = staticMemoryListener.StartListen(ProcessHandler, frequency);
         return staticMemoryListener;
     }
-    internal DynamicMemoryListener AddDynamicListener(string customName, Func<nint?> memoryAddressGetFunc, TimeSpan frequency, Type type)
+    internal override DynamicMemoryListener AddDynamicListener(string customName, Func<nint?> memoryAddressGetFunc, TimeSpan? frequency, Type type, bool startListen)
     {
         if (!IsListening)
             IsListening = true;
         var dynamicMemoryListener = MemoryListener.CreateDynamicListener(customName, memoryAddressGetFunc, type);
-        _ = dynamicMemoryListener.StartListen(ProcessHandler, frequency);
+        if (startListen)
+            _ = dynamicMemoryListener.StartListen(ProcessHandler, frequency);
         return dynamicMemoryListener;
     }
-    /// <summary>
-    /// 停止所有监听
-    /// </summary>
-    public async Task StopListeners()
+    internal override UpdatableMemoryListener AddUpdatableListener(string customName, Func<nint?> memoryAddressUpdateFunc, TimeSpan? frequency, Type type, bool startListen)
+    {
+        if (!IsListening)
+            IsListening = true;
+        var updatableMemoryListener = MemoryListener.CreateUpdatableListener(customName, memoryAddressUpdateFunc, type);
+        if (startListen)
+            _ = updatableMemoryListener.StartListen(ProcessHandler, frequency);
+        return updatableMemoryListener;
+    }
+    /// <inheritdoc/>
+    public override async Task StopListeners()
     {
         IsListening = false;
         var taskList = new List<Task>();
@@ -121,25 +152,17 @@ public class MemoryListenerManager : IDisposable, IEnumerable
         }
         await Task.WhenAll(taskList);
     }
-    /// <summary>
-    /// 停止指定的监听器
-    /// </summary>
-    /// <param name="customName">自定义名称</param>
-    public async Task StopListener(string customName) => await listenerDictionary[customName].StopListen();
-    /// <summary>
-    /// 移除指定监听器
-    /// </summary>
-    /// <param name="customName"></param>
-    public void RemoveListener(string customName)
+    /// <inheritdoc/>
+    public override async Task StopListener(string customName) => await listenerDictionary[customName].StopListen();
+    /// <inheritdoc/>
+    public override void RemoveListener(string customName)
     {
         listenerDictionary.Remove(customName);
         if (listenerDictionary.Count == 0)
             IsListening = false;
     }
-    /// <summary>
-    /// 清除所有监听器
-    /// </summary>
-    public void Clear()
+    /// <inheritdoc/>
+    public override void ClearListeners()
     {
         IsListening = false;
         listenerDictionary.Clear();

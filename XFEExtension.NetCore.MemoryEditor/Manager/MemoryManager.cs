@@ -1,47 +1,41 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 
 namespace XFEExtension.NetCore.MemoryEditor.Manager;
 
 /// <summary>
 /// 内存地址管理器
 /// </summary>
-/// <param name="processHandler">目标进程句柄</param>
-public abstract class MemoryManager(nint processHandler) : IDisposable, IEnumerable
+public abstract class MemoryManager : IMemoryManager
 {
     private protected bool disposedValue;
-    private protected Dictionary<string, Func<nint?>> memoryAddressGetFuncDictionary = [];
     /// <summary>
-    /// 监听器
+    /// 编辑器
     /// </summary>
-    public MemoryListenerManager Listener { get; protected set; } = new(processHandler);
+    public MemoryEditor Editor { get; protected set; } = new();
     /// <summary>
     /// 现成句柄
     /// </summary>
-    public nint ProcessHandler { get; set; } = processHandler;
+    public nint ProcessHandler { get => Editor.ProcessHandle; set => Editor.ProcessHandle = value; }
     /// <summary>
-    /// 索引器
+    /// 当前目标进程
     /// </summary>
-    /// <param name="addressName">地址标识名称</param>
-    /// <returns></returns>
-    public abstract nint? this[string addressName] { get; }
-    /// <summary>
-    /// 添加地址
-    /// </summary>
-    /// <param name="addressName">标识名称</param>
-    /// <param name="addressGetFunc">地址的获取方法</param>
-    public abstract void Add(string addressName, Func<nint?> addressGetFunc);
-    /// <summary>
-    /// 设置指定名称的地址的获取方法
-    /// </summary>
-    /// <param name="addressName">地址标识名称</param>
-    /// <param name="newAddressGetFun">新的获取方法</param>
-    public abstract void Set(string addressName, Func<nint?> newAddressGetFun);
-    public abstract void AddWithListener(s)
+    public Process? CurrentProcess { get => Editor.CurrentProcess; set => Editor.CurrentProcess = value; }
     /// <summary>
     /// 移除指定名称的地址
     /// </summary>
     /// <param name="addressName">地址名称</param>
     public abstract void Remove(string addressName);
+    internal abstract void Add(MemoryItemBuilder builder);
+    /// <summary>
+    /// 添加地址
+    /// </summary>
+    /// <param name="builders">内存地址构建器组</param>
+    public void Add(params MemoryItemBuilder[] builders)
+    {
+        foreach (var builder in builders)
+            Add(builder);
+    }
     /// <summary>
     /// 释放资源
     /// </summary>
@@ -52,7 +46,7 @@ public abstract class MemoryManager(nint processHandler) : IDisposable, IEnumera
         {
             if (disposing)
             {
-                Listener.Dispose();
+                Editor.Dispose();
             }
             disposedValue = true;
         }

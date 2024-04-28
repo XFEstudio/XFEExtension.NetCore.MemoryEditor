@@ -1,31 +1,68 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using XFEExtension.NetCore.DelegateExtension;
+using XFEExtension.NetCore.MemoryEditor.Manager;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 
 /// <summary>
 /// 内存编辑器
 /// </summary>
-public partial class MemoryEditor : IDisposable
+public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
 {
     private bool disposedValue;
+    private MemoryListenerManager listenerManager = new();
     /// <summary>
     /// 当指定地址的内存值变化时触发
     /// </summary>
-    public event XFEEventHandler<nint?, MemoryValue>? ValueChanged;
+    public event XFEEventHandler<MemoryListener, MemoryValue>? ValueChanged;
     /// <summary>
-    /// 目标进程
+    /// 当前进程结束时触发
     /// </summary>
-    public Process TargetProcess { get; set; }
+    public event EventHandler? CurrentProcessExit;
+    /// <summary>
+    /// 目标进程启动时触发
+    /// </summary>
+    public event EventHandler? CurrentProcessEntered;
+    /// <summary>
+    /// 当前目标进程
+    /// </summary>
+    public Process? CurrentProcess
+    {
+        get => listenerManager.CurrentProcess;
+        set
+        {
+            if (value is not null)
+            {
+                listenerManager.CurrentProcess = value;
+
+            }
+        }
+    }
     /// <summary>
     /// 进程句柄
     /// </summary>
-    public nint ProcessHandle { get; set; }
+    public nint ProcessHandle { get => listenerManager.ProcessHandler; set => listenerManager.ProcessHandler = value; }
     /// <summary>
     /// 内存监听器
     /// </summary>
-    public MemoryListenerManager Listener { get; set; }
+    public MemoryListenerManager ListenerManager
+    {
+        get { return listenerManager; }
+        set { listenerManager = value; }
+    }
+    /// <summary>
+    /// 当目标进程退出后，是否自动重新获取进程
+    /// </summary>
+    public bool AutoReacquireProcess { get => listenerManager.AutoReacquireProcess; set => listenerManager.AutoReacquireProcess = value; }
+    /// <summary>
+    /// 自动重新获取进程的检测频率（单位毫秒）
+    /// </summary>
+    public int AutoReacquireProcessFrequency { get => listenerManager.AutoReacquireProcessFrequency; set => listenerManager.AutoReacquireProcessFrequency = value; }
+    /// <summary>
+    /// 进程句柄权限（不懂勿填）
+    /// </summary>
+    public ProcessAccessFlags ProcessAccessFlags { get => listenerManager.ProcessAccessFlags; set => listenerManager.ProcessAccessFlags = value; }
     /// <summary>
     /// 进程位数类型（32/64）
     /// </summary>
@@ -47,66 +84,13 @@ public partial class MemoryEditor : IDisposable
     /// <returns>是否写入成功</returns>
     public bool WriteMemory<T>(nint address, T source) where T : struct => WriteMemory<T>(ProcessHandle, address, source);
     /// <summary>
-    /// 添加监听器
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="address">待监听的内存地址</param>
-    /// <param name="customName">自定义监听器标识名</param>
-    public void AddListener<T>(nint address, string customName = "") where T : struct => _ = Listener.StartListen<T>(address, customName);
-    /// <summary>
-    /// 添加监听器
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="address">待监听的内存地址</param>
-    /// <param name="delay">检测频率，以毫秒为单位</param>
-    /// <param name="customName">自定义监听器标识名</param>
-    public void AddListener<T>(nint address, int delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(address, delay, customName);
-    /// <summary>
-    /// 添加监听器
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="address">待监听的内存地址</param>
-    /// <param name="delay">检测频率</param>
-    /// <param name="customName">自定义监听器标识名</param>
-    public void AddListener<T>(nint address, TimeSpan delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(address, delay, customName);
-    /// <summary>
-    /// 添加监听器
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="getMemoryAddressFunc">动态获取内存地址的方法</param>
-    /// <param name="delay">检测频率，以毫秒为单位</param>
-    /// <param name="customName">自定义监听器标识名</param>
-    public void AddListener<T>(Func<nint?> getMemoryAddressFunc, int delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(getMemoryAddressFunc, delay, customName);
-    /// <summary>
-    /// 添加监听器
-    /// </summary>
-    /// <typeparam name="T">待监听的内存的数据类型（int,float,long等）</typeparam>
-    /// <param name="getMemoryAddressFunc">动态获取内存地址的方法</param>
-    /// <param name="delay">检测频率</param>
-    /// <param name="customName">自定义监听器标识名</param>
-    public void AddListener<T>(Func<nint?> getMemoryAddressFunc, TimeSpan delay, string customName = "") where T : struct => _ = Listener.StartListen<T>(getMemoryAddressFunc, delay, customName);
-    /// <summary>
-    /// 移除并停止指定监听器
-    /// </summary>
-    /// <param name="address">监听地址</param>
-    public void RemoveListener(nint address) => Listener.StopListener(address);
-    /// <summary>
-    /// 移除并停止指定监听器
-    /// </summary>
-    /// <param name="customName">自定义名称</param>
-    public void RemoveListener(string customName) => Listener.StopListener(customName);
-    /// <summary>
-    /// 移除所有监听器
-    /// </summary>
-    public void RemoveListeners() => Listener.StopListener();
-    /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>
     /// <param name="moduleName">模块名称（基址的进程部分，可以是DLL等）</param>
     /// <param name="baseAddress">基址的地址部分</param>
     /// <param name="offsets">基址的偏移组</param>
     /// <returns>实际地址</returns>
-    public nint ResolvePointerAddress(string moduleName, int baseAddress, params nint[] offsets) => ResolvePointerAddress(TargetProcess, moduleName, baseAddress, ProcessBiteType, offsets);
+    public nint ResolvePointerAddress(string moduleName, int baseAddress, params nint[] offsets) => CurrentProcess is null ? default : ResolvePointerAddress(CurrentProcess, moduleName, baseAddress, ProcessBiteType, offsets);
     /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>
@@ -114,7 +98,29 @@ public partial class MemoryEditor : IDisposable
     /// <param name="baseAddress">基址的地址部分</param>
     /// <param name="offsets">基址的偏移组</param>
     /// <returns>实际地址</returns>
-    public nint ResolvePointerAddress(nint moduleBaseAddress, int baseAddress, params nint[] offsets) => ResolvePointerAddress(TargetProcess, moduleBaseAddress, baseAddress, ProcessBiteType, offsets);
+    public nint ResolvePointerAddress(nint moduleBaseAddress, int baseAddress, params nint[] offsets) => CurrentProcess is null ? default : ResolvePointerAddress(CurrentProcess, moduleBaseAddress, baseAddress, ProcessBiteType, offsets);
+    internal override StaticMemoryListener AddStaticListener(string customName, nint memoryAddress, TimeSpan? frequency, Type type, bool startListen) => ListenerManager.AddStaticListener(customName, memoryAddress, frequency, type, startListen);
+    internal override DynamicMemoryListener AddDynamicListener(string customName, Func<nint?> memoryAddressGetFunc, TimeSpan? frequency, Type type, bool startListen) => ListenerManager.AddDynamicListener(customName, memoryAddressGetFunc, frequency, type, startListen);
+    internal override UpdatableMemoryListener AddUpdatableListener(string customName, Func<nint?> memoryAddressUpdateFunc, TimeSpan? frequency, Type type, bool startListen) => ListenerManager.AddUpdatableListener(customName, memoryAddressUpdateFunc, frequency, type, startListen);
+    /// <inheritdoc/>
+    public override void ClearListeners() => ListenerManager.ClearListeners();
+    /// <inheritdoc/>
+    public override void RemoveListener(string customName) => ListenerManager.RemoveListener(customName);
+    /// <inheritdoc/>
+    public override Task StopListener(string customName) => ListenerManager.StopListener(customName);
+    /// <inheritdoc/>
+    public override Task StopListeners() => ListenerManager.StopListeners();
+    /// <summary>
+    /// 内存编辑器
+    /// </summary>
+    /// <param name="processBiteType">进程位数类型（32/64）</param>
+    public MemoryEditor(ProcessType processBiteType = ProcessType.Bit64)
+    {
+        ProcessBiteType = processBiteType;
+        ListenerManager.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.CurrentProcessExit += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
+        ListenerManager.CurrentProcessEntered += (sender, e) => CurrentProcessEntered?.Invoke(sender, e);
+    }
     /// <summary>
     /// 内存编辑器
     /// </summary>
@@ -123,11 +129,11 @@ public partial class MemoryEditor : IDisposable
     /// <param name="processAccessFlags">进程访问权限</param>
     public MemoryEditor(Process process, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
-        TargetProcess = process;
-        ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+        CurrentProcess = process;
         ProcessBiteType = processType;
-        Listener = new(ProcessHandle);
-        Listener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.CurrentProcessExit += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
+        ListenerManager.CurrentProcessEntered += (sender, e) => CurrentProcessEntered?.Invoke(sender, e);
     }
     /// <summary>
     /// 内存编辑器
@@ -137,11 +143,11 @@ public partial class MemoryEditor : IDisposable
     /// <param name="processAccessFlags">进程访问权限</param>
     public MemoryEditor(string processName, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
-        TargetProcess = Process.GetProcessesByName(processName).First();
-        ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+        CurrentProcess = Process.GetProcessesByName(processName).First();
         ProcessBiteType = processType;
-        Listener = new(ProcessHandle);
-        Listener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.CurrentProcessExit += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
+        ListenerManager.CurrentProcessEntered += (sender, e) => CurrentProcessEntered?.Invoke(sender, e);
     }
     /// <summary>
     /// 内存编辑器
@@ -151,11 +157,11 @@ public partial class MemoryEditor : IDisposable
     /// <param name="processAccessFlags">进程访问权限</param>
     public MemoryEditor(int processId, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
     {
-        TargetProcess = Process.GetProcessById(processId);
-        ProcessHandle = GetProcessHandle(TargetProcess.Id, processAccessFlags);
+        CurrentProcess = Process.GetProcessById(processId);
         ProcessBiteType = processType;
-        Listener = new(ProcessHandle);
-        Listener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.CurrentProcessExit += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
+        ListenerManager.CurrentProcessEntered += (sender, e) => CurrentProcessEntered?.Invoke(sender, e);
     }
     /// <summary>
     /// 释放资源
@@ -167,7 +173,7 @@ public partial class MemoryEditor : IDisposable
         {
             if (disposing)
             {
-                Listener.Dispose();
+                ListenerManager.Dispose();
             }
             disposedValue = true;
         }
@@ -341,7 +347,7 @@ public partial class MemoryEditor : IDisposable
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    internal static partial bool WriteProcessMemory(nint hProcess, nint lpBaseAddress, byte[] lpBuffer, uint nSize, out int lpNumberOfBytesWritten);
+    internal static partial bool WriteProcessMemory(nint hProcess, nint lpBaseAddress, [In] byte[] lpBuffer, uint nSize, out int lpNumberOfBytesWritten);
 
     [LibraryImport("kernel32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

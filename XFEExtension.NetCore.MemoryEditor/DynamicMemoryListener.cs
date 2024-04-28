@@ -22,7 +22,7 @@ public abstract class DynamicMemoryListener(string customName, Func<nint?> getAd
     /// <param name="processHandler">监听的进程句柄</param>
     /// <param name="frequency">监听检测频率</param>
     /// <returns></returns>
-    public override async Task StartListen(nint processHandler, TimeSpan frequency)
+    public override async Task StartListen(nint processHandler, TimeSpan? frequency)
     {
         await base.StartListen(processHandler, frequency);
         CurrentListeningTask = Task.Run(async () =>
@@ -30,7 +30,7 @@ public abstract class DynamicMemoryListener(string customName, Func<nint?> getAd
             var memoryAddress = getAddressFunc.Invoke();
             object? lastValue = null;
             if (memoryAddress is not null)
-                try { lastValue = MemoryEditor.ReadMemory(processHandler, memoryAddress.Value, memoryAddressType); } catch { }
+                try { lastValue = MemoryEditor.ReadMemory(this.processHandler, memoryAddress.Value, memoryAddressType); } catch { }
             while (isListening)
             {
                 try
@@ -44,16 +44,16 @@ public abstract class DynamicMemoryListener(string customName, Func<nint?> getAd
                         while (memoryAddress == 0 && isListening)
                         {
                             memoryAddress = getAddressFunc.Invoke();
-                            await Task.Delay(frequency);
+                            await Task.Delay(this.frequency);
                         }
                     }
-                    var currentValue = MemoryEditor.ReadMemory(processHandler, memoryAddress!.Value, memoryAddressType);
+                    var currentValue = MemoryEditor.ReadMemory(this.processHandler, memoryAddress!.Value, memoryAddressType);
                     if (lastValue is null == currentValue is null || lastValue?.Equals(currentValue) == false)
                     {
                         valueChanged?.Invoke(this, new(lastValue is not null, currentValue is not null, lastValue, currentValue, name));
                         lastValue = currentValue;
                     }
-                    await Task.Delay(frequency);
+                    await Task.Delay(this.frequency);
                 }
                 catch { }
             }

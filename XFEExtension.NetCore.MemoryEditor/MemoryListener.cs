@@ -59,12 +59,12 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// <param name="frequency">监听检测频率</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">监听已启动，无法重复启动监听</exception>
-    public virtual async Task StartListen(nint processHandler, TimeSpan frequency)
+    public virtual async Task StartListen(nint processHandler, TimeSpan? frequency)
     {
         if (isListening)
             throw new InvalidOperationException("监听已启动，无法重复启动监听");
         isListening = true;
-        this.frequency = frequency;
+        this.frequency = frequency ?? TimeSpan.FromMilliseconds(1);
         this.processHandler = processHandler;
         await Task.CompletedTask;
     }
