@@ -73,19 +73,7 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
     {
         CurrentProcessExit?.Invoke(sender, e);
         if (AutoReacquireProcess)
-            _ = Task.Run(async () =>
-            {
-                while (currentProcess is null || currentProcess.HasExited)
-                {
-                    var result = Process.GetProcessesByName(ProcessName);
-                    if (result is not null && result.Length >= 1)
-                    {
-                        CurrentProcess = result[0];
-                        return;
-                    }
-                    await Task.Delay(AutoReacquireProcessFrequency);
-                }
-            });
+            _ = WaitProcessEnter();
         await StopListeners();
     }
     /// <summary>
@@ -97,9 +85,9 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
     /// </summary>
     public bool AutoReacquireProcess { get; set; }
     /// <summary>
-    /// 自动重新获取进程的检测频率（单位毫秒）
+    /// 重新获取进程的检测频率（单位毫秒）
     /// </summary>
-    public int AutoReacquireProcessFrequency { get; set; } = 500;
+    public int ReacquireProcessFrequency { get; set; } = 500;
     /// <summary>
     /// 进程句柄权限
     /// </summary>
@@ -119,6 +107,7 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
         if (!IsListening)
             IsListening = true;
         var staticMemoryListener = MemoryListener.CreateStaticListener(customName, memoryAddress, type);
+        staticMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
         if (startListen)
             _ = staticMemoryListener.StartListen(ProcessHandler, frequency);
         return staticMemoryListener;
@@ -128,6 +117,7 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
         if (!IsListening)
             IsListening = true;
         var dynamicMemoryListener = MemoryListener.CreateDynamicListener(customName, memoryAddressGetFunc, type);
+        dynamicMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
         if (startListen)
             _ = dynamicMemoryListener.StartListen(ProcessHandler, frequency);
         return dynamicMemoryListener;
@@ -137,9 +127,35 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
         if (!IsListening)
             IsListening = true;
         var updatableMemoryListener = MemoryListener.CreateUpdatableListener(customName, memoryAddressUpdateFunc, type);
+        updatableMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
         if (startListen)
             _ = updatableMemoryListener.StartListen(ProcessHandler, frequency);
         return updatableMemoryListener;
+    }
+    /// <summary>
+    /// 等待目标进程出现
+    /// </summary>
+    /// <param name="processName">进程名称</param>
+    /// <param name="frequency">检测频率</param>
+    /// <returns></returns>
+    public async Task WaitProcessEnter(string? processName = null, int frequency = 500)
+    {
+        if (processName is not null)
+            ProcessName = processName;
+        ReacquireProcessFrequency = frequency;
+        await Task.Run(async () =>
+        {
+            while (currentProcess is null || currentProcess.HasExited)
+            {
+                var result = Process.GetProcessesByName(ProcessName);
+                if (result is not null && result.Length >= 1)
+                {
+                    CurrentProcess = result[0];
+                    return;
+                }
+                await Task.Delay(ReacquireProcessFrequency);
+            }
+        });
     }
     /// <inheritdoc/>
     public override async Task StopListeners()

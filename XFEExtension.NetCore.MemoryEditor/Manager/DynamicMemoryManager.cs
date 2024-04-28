@@ -1,11 +1,13 @@
 ﻿using System.Collections;
+using XFEExtension.NetCore.ImplExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor.Manager;
 
 /// <summary>
 /// 动态内存管理器
 /// </summary>
-public class DynamicMemoryManager : MemoryManager
+[CreateImpl]
+public abstract class DynamicMemoryManager : MemoryManager
 {
     /// <summary>
     /// 地址值字典
@@ -19,8 +21,17 @@ public class DynamicMemoryManager : MemoryManager
     public DynamicMemoryItem this[string addressName] => ItemDictionary[addressName];
     internal override void Add(MemoryItemBuilder builder)
     {
-        if (builder.DynamicMemoryAddress is null)
-            throw new ArgumentNullException(nameof(builder), "对于动态地址管理器，构建器的动态地址不可为空");
+        if (builder.UseResolvePointer)
+        {
+            if (builder.ModuleName is null)
+                throw new ArgumentNullException(nameof(builder), "对于使用基址指针表达式的构建器，模块名称是必须的");
+            builder.DynamicMemoryAddress = new(() => Editor.ResolvePointerAddress(builder.ModuleName, builder.BaseAddress, builder.Offsets));
+        }
+        else
+        {
+            if (builder.DynamicMemoryAddress is null)
+                throw new ArgumentNullException(nameof(builder), "对于动态地址管理器，构建器的动态地址不可为空");
+        }
         var dynamicMemoryItem = new DynamicMemoryItemImpl(builder.Name, builder.DynamicMemoryAddress, builder.MemoryAddressType, Editor);
         if (builder.HasListener)
             dynamicMemoryItem.AddListener(builder.ListenerFrequency, builder.StartListen);
@@ -40,5 +51,5 @@ public class DynamicMemoryManager : MemoryManager
     /// 动态内存管理器
     /// </summary>
     /// <param name="builders">内存构建器组</param>
-    public DynamicMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
+    internal DynamicMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
 }

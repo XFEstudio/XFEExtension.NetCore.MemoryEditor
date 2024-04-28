@@ -1,10 +1,12 @@
 ﻿using System.Collections;
+using XFEExtension.NetCore.ImplExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor.Manager;
 
 /// <summary>
 /// 可更新内存管理器
 /// </summary>
+[CreateImpl]
 public class UpdatableMemoryManager : MemoryManager
 {
     /// <summary>
@@ -19,8 +21,17 @@ public class UpdatableMemoryManager : MemoryManager
     public UpdatableMemoryItem this[string addressName] => ItemDictionary[addressName];
     internal override void Add(MemoryItemBuilder builder)
     {
-        if (builder.UpdatableMemoryAddress is null)
-            throw new ArgumentNullException(nameof(builder), "对于可更新内存管理器，构建器更新地址的方法不可为空");
+        if (builder.UseResolvePointer)
+        {
+            if (builder.ModuleName is null)
+                throw new ArgumentNullException(nameof(builder), "对于使用基址指针表达式的构建器，模块名称是必须的");
+            builder.UpdatableMemoryAddress = new(() => Editor.ResolvePointerAddress(builder.ModuleName, builder.BaseAddress, builder.Offsets));
+        }
+        else
+        {
+            if (builder.UpdatableMemoryAddress is null)
+                throw new ArgumentNullException(nameof(builder), "对于可更新内存管理器，构建器更新地址的方法不可为空");
+        }
         var updatableMemoryItem = new UpdatableMemoryItemImpl(builder.Name, builder.UpdatableMemoryAddress, builder.MemoryAddressType, Editor);
         if (builder.HasListener)
             updatableMemoryItem.AddListener(builder.ListenerFrequency, builder.StartListen);
@@ -40,5 +51,5 @@ public class UpdatableMemoryManager : MemoryManager
     /// 可更新内存管理器
     /// </summary>
     /// <param name="builders">内存构建器组</param>
-    public UpdatableMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
+    internal UpdatableMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
 }

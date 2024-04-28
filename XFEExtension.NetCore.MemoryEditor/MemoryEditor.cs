@@ -27,22 +27,11 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// <summary>
     /// 当前目标进程
     /// </summary>
-    public Process? CurrentProcess
-    {
-        get => listenerManager.CurrentProcess;
-        set
-        {
-            if (value is not null)
-            {
-                listenerManager.CurrentProcess = value;
-
-            }
-        }
-    }
+    public Process? CurrentProcess { get => listenerManager.CurrentProcess; set => listenerManager.CurrentProcess = value; }
     /// <summary>
     /// 进程句柄
     /// </summary>
-    public nint ProcessHandle { get => listenerManager.ProcessHandler; set => listenerManager.ProcessHandler = value; }
+    public nint ProcessHandler { get => listenerManager.ProcessHandler; set => listenerManager.ProcessHandler = value; }
     /// <summary>
     /// 内存监听器
     /// </summary>
@@ -58,7 +47,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// <summary>
     /// 自动重新获取进程的检测频率（单位毫秒）
     /// </summary>
-    public int AutoReacquireProcessFrequency { get => listenerManager.AutoReacquireProcessFrequency; set => listenerManager.AutoReacquireProcessFrequency = value; }
+    public int AutoReacquireProcessFrequency { get => listenerManager.ReacquireProcessFrequency; set => listenerManager.ReacquireProcessFrequency = value; }
     /// <summary>
     /// 进程句柄权限（不懂勿填）
     /// </summary>
@@ -68,13 +57,20 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// </summary>
     public ProcessType ProcessBiteType { get; set; }
     /// <summary>
+    /// 等待目标进程出现
+    /// </summary>
+    /// <param name="processName">进程名称</param>
+    /// <param name="frequency">检测频率</param>
+    /// <returns></returns>
+    public async Task WaitProcessEnter(string? processName = null, int frequency = 500) => await listenerManager.WaitProcessEnter(processName, frequency);
+    /// <summary>
     /// 读取指定地址的内存
     /// </summary>
     /// <typeparam name="T">目标类型（int,float,long等）</typeparam>
     /// <param name="address">指定地址</param>
     /// <param name="result">读取结果</param>
     /// <returns>是否读取成功</returns>
-    public bool ReadMemory<T>(nint address, out T result) where T : struct => ReadMemory<T>(ProcessHandle, address, out result);
+    public bool ReadMemory<T>(nint address, out T result) where T : struct => ReadMemory(ProcessHandler, address, out result);
     /// <summary>
     /// 在指定内存地址中写入数据
     /// </summary>
@@ -82,7 +78,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// <param name="address">目标地址</param>
     /// <param name="source">待写入值</param>
     /// <returns>是否写入成功</returns>
-    public bool WriteMemory<T>(nint address, T source) where T : struct => WriteMemory<T>(ProcessHandle, address, source);
+    public bool WriteMemory<T>(nint address, T source) where T : struct => WriteMemory(ProcessHandler, address, source);
     /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>
@@ -90,7 +86,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// <param name="baseAddress">基址的地址部分</param>
     /// <param name="offsets">基址的偏移组</param>
     /// <returns>实际地址</returns>
-    public nint ResolvePointerAddress(string moduleName, int baseAddress, params nint[] offsets) => CurrentProcess is null ? default : ResolvePointerAddress(CurrentProcess, moduleName, baseAddress, ProcessBiteType, offsets);
+    public nint ResolvePointerAddress(string moduleName, nint baseAddress, params nint[] offsets) => CurrentProcess is null ? default : ResolvePointerAddress(CurrentProcess, moduleName, baseAddress, ProcessBiteType, offsets);
     /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>
@@ -126,8 +122,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// </summary>
     /// <param name="process">进程</param>
     /// <param name="processType">进程位数类型（32/64）</param>
-    /// <param name="processAccessFlags">进程访问权限</param>
-    public MemoryEditor(Process process, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    public MemoryEditor(Process process, ProcessType processType = ProcessType.Bit64)
     {
         CurrentProcess = process;
         ProcessBiteType = processType;
@@ -140,8 +135,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// </summary>
     /// <param name="processName">进程名称</param>
     /// <param name="processType">进程位数类型（32/64）</param>
-    /// <param name="processAccessFlags">进程访问权限</param>
-    public MemoryEditor(string processName, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    public MemoryEditor(string processName, ProcessType processType = ProcessType.Bit64)
     {
         CurrentProcess = Process.GetProcessesByName(processName).First();
         ProcessBiteType = processType;
@@ -154,8 +148,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// </summary>
     /// <param name="processId">进程PID</param>
     /// <param name="processType">进程位数类型（32/64）</param>
-    /// <param name="processAccessFlags">进程访问权限</param>
-    public MemoryEditor(int processId, ProcessType processType = ProcessType.Bit64, ProcessAccessFlags processAccessFlags = ProcessAccessFlags.All)
+    public MemoryEditor(int processId, ProcessType processType = ProcessType.Bit64)
     {
         CurrentProcess = Process.GetProcessById(processId);
         ProcessBiteType = processType;
@@ -277,7 +270,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// <param name="processType">目标进程类型</param>
     /// <param name="offsets">基址的偏移组</param>
     /// <returns>实际地址</returns>
-    public static nint ResolvePointerAddress(Process process, string moduleName, int baseAddress, ProcessType processType, params nint[] offsets) => ResolvePointerAddress(process, GetModuleBaseAddress(process, moduleName), baseAddress, processType, offsets);
+    public static nint ResolvePointerAddress(Process process, string moduleName, nint baseAddress, ProcessType processType, params nint[] offsets) => ResolvePointerAddress(process, GetModuleBaseAddress(process, moduleName), baseAddress, processType, offsets);
     /// <summary>
     /// 解析基址对应的实际地址
     /// </summary>
@@ -287,9 +280,9 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// <param name="processType">目标进程类型</param>
     /// <param name="offsets">基址的偏移组</param>
     /// <returns>实际地址</returns>
-    public static nint ResolvePointerAddress(Process process, nint moduleBaseAddress, int baseAddress, ProcessType processType, params nint[] offsets)
+    public static nint ResolvePointerAddress(Process process, nint moduleBaseAddress, nint baseAddress, ProcessType processType, params nint[] offsets)
     {
-        var resolvedAddress = nint.Add(moduleBaseAddress, baseAddress);
+        var resolvedAddress = moduleBaseAddress + baseAddress;
         if (processType == ProcessType.Bit32)
         {
             foreach (nint offset in offsets)

@@ -40,7 +40,7 @@ public abstract class MemoryItem(string name, Type memoryItemType, MemoryEditor 
         if (IsListening)
             throw new InvalidOperationException("正在监听中，无法重复监听");
         IsListening = true;
-        await StartListen(memoryEditor.ProcessHandle, frequency);
+        await StartListen(memoryEditor.ProcessHandler, frequency);
     }
     internal abstract Task StartListen(nint processHandler, TimeSpan? frequency);
     /// <summary>

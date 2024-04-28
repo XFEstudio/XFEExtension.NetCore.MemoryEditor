@@ -21,6 +21,10 @@ public abstract class MemoryItemBuilder
     /// </summary>
     public bool StartListen { get; set; }
     /// <summary>
+    /// 使用基址指针表达式
+    /// </summary>
+    public bool UseResolvePointer { get; private set; }
+    /// <summary>
     /// 内存地址类型
     /// </summary>
     public required Type MemoryAddressType { get; set; }
@@ -40,6 +44,18 @@ public abstract class MemoryItemBuilder
     /// 可更新内存地址更新方法
     /// </summary>
     public Func<nint?>? UpdatableMemoryAddress { get; set; }
+    /// <summary>
+    /// 模块名称
+    /// </summary>
+    public string? ModuleName { get; set; }
+    /// <summary>
+    /// 模块的地址部分
+    /// </summary>
+    public nint BaseAddress { get; set; }
+    /// <summary>
+    /// 基址偏移部分
+    /// </summary>
+    public nint[] Offsets { get; set; } = [];
     /// <summary>
     /// 为该地址添加监听器
     /// </summary>
@@ -84,6 +100,21 @@ public abstract class MemoryItemBuilder
     public MemoryItemBuilder WithDynamicMemoryAddress(Func<nint?> memoryAddressGetFunc)
     {
         DynamicMemoryAddress = memoryAddressGetFunc;
+        return this;
+    }
+    /// <summary>
+    /// 使用基址指针动态表达式
+    /// </summary>
+    /// <param name="moduleName">模块名称</param>
+    /// <param name="baseAddress">模块的地址部分</param>
+    /// <param name="offsets">基址指针偏移部分</param>
+    /// <returns></returns>
+    public MemoryItemBuilder WithResolvePointer(string moduleName, nint baseAddress, params nint[] offsets)
+    {
+        UseResolvePointer = true;
+        ModuleName = moduleName;
+        BaseAddress = baseAddress;
+        Offsets = offsets;
         return this;
     }
     /// <summary>
