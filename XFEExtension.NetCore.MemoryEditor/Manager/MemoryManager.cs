@@ -10,10 +10,11 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 public abstract class MemoryManager : IMemoryManager
 {
     private protected bool disposedValue;
+    private protected XFEEventHandler<MemoryItem, MemoryValue>? valueChanged;
     /// <summary>
     /// 当指定地址的内存值变化时触发
     /// </summary>
-    public event XFEEventHandler<MemoryItem, MemoryValue>? ValueChanged;
+    public event XFEEventHandler<MemoryItem, MemoryValue>? ValueChanged { add => valueChanged += value; remove => valueChanged -= value; }
     /// <summary>
     /// 当前进程结束时触发
     /// </summary>

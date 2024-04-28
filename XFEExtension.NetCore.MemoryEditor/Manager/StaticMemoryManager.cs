@@ -42,5 +42,9 @@ public class StaticMemoryManager : MemoryManager
     /// 静态内存管理器
     /// </summary>
     /// <param name="builders">内存构建器组</param>
-    internal StaticMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
+    internal StaticMemoryManager(params MemoryItemBuilder[] builders)
+    {
+        Add(builders);
+        Editor.ValueChanged += (sender, e) => valueChanged?.Invoke(ItemDictionary[sender.Name], e);
+    }
 }

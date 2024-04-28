@@ -15,11 +15,7 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// <summary>
     /// 当监听值发生改变时触发
     /// </summary>
-    public event XFEEventHandler<MemoryListener, MemoryValue>? ValueChanged
-    {
-        add => valueChanged += value;
-        remove => valueChanged -= value;
-    }
+    public event XFEEventHandler<MemoryListener, MemoryValue>? ValueChanged { add => valueChanged += value; remove => valueChanged -= value; }
     private protected string name = customName;
     /// <summary>
     /// 监听器自定义标识名

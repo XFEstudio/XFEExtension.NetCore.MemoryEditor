@@ -51,5 +51,9 @@ public class UpdatableMemoryManager : MemoryManager
     /// 可更新内存管理器
     /// </summary>
     /// <param name="builders">内存构建器组</param>
-    internal UpdatableMemoryManager(params MemoryItemBuilder[] builders) => Add(builders);
+    internal UpdatableMemoryManager(params MemoryItemBuilder[] builders)
+    {
+        Add(builders);
+        Editor.ValueChanged += (sender, e) => valueChanged?.Invoke(ItemDictionary[sender.Name], e);
+    }
 }
