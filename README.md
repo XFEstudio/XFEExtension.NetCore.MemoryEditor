@@ -1,57 +1,64 @@
 # XFEExtension.NetCore.MemoryEditor
 
-## ´´½¨ÄÚ´æ¹ÜÀíÆ÷
+## å†…å­˜ç®¡ç†å™¨
+
+### åˆ›å»ºå†…å­˜ç®¡ç†å™¨ï¼ˆæ¨èä½¿ç”¨å¯æ›´æ–°å†…å­˜ç®¡ç†å™¨ï¼‰
+
 ```csharp
 public static class Program
 {
-    public static UpdatableMemoryManager Manager { get; } = MemoryManager.CreateBuilder() //´´½¨ÄÚ´æ¹ÜÀíÆ÷µÄ¹¹½¨Æ÷
-            .WithAutoReacquireProcess("ExampleGame") //µ±Ä¿±ê½ø³ÌÍË³öºó£¬×Ô¶¯ÖØĞÂ»ñÈ¡Ä¿±êÃû³ÆµÄ½ø³Ì
-            .WithFindProcessWhenCreate() //´´½¨¹ÜÀíÆ÷Ê±£¬¿ªÊ¼Ñ°ÕÒÄ¿±êÃû³ÆµÄ½ø³Ì£¨Èç¹ûÇ°ÃæÉèÖÃÁËÄ¿±ê½ø³ÌÃû³Æ´Ë´¦¿ÉÒÔ²»ÓÃÉèÖÃ£©
+    public static UpdatableMemoryManager Manager { get; } = MemoryManager.CreateBuilder() //åˆ›å»ºå†…å­˜ç®¡ç†å™¨çš„æ„å»ºå™¨
+            .WithAutoReacquireProcess("ExampleGame") //å½“ç›®æ ‡è¿›ç¨‹é€€å‡ºåï¼Œè‡ªåŠ¨é‡æ–°è·å–ç›®æ ‡åç§°çš„è¿›ç¨‹
+            .WithFindProcessWhenCreate() //åˆ›å»ºç®¡ç†å™¨æ—¶ï¼Œå¼€å§‹å¯»æ‰¾ç›®æ ‡åç§°çš„è¿›ç¨‹ï¼ˆå¦‚æœå‰é¢è®¾ç½®äº†ç›®æ ‡è¿›ç¨‹åç§°æ­¤å¤„å¯ä»¥ä¸ç”¨è®¾ç½®ï¼‰
             .BuildUpdatableManager(
-            MemoryItemBuilder.Create<int>("Level") //ÎªÃ¿¸öµØÖ·Ìí¼ÓÒ»¸öÃû³Æ
-                             .WithResolvePointer("xxx-xxx-xx.dll", 0x0072A200, 0x14A0, 0x0, 0x80, 0xE4, 0x0, 0x1EC) //ÄÚ´æµØÖ·µÄÄ£¿éÃû³Æ¡¢»ùÖ·ºÍÆ«ÒÆ²¿·Ö
-                             .WithListener(), //Ìí¼Ó¼àÌıÆ÷
+            MemoryItemBuilder.Create<int>("Level") //ä¸ºæ¯ä¸ªåœ°å€æ·»åŠ ä¸€ä¸ªåç§°
+                             .WithResolvePointer("xxx-xxx-xx.dll", 0x0072A200, 0x14A0, 0x0, 0x80, 0xE4, 0x0, 0x1EC) //å†…å­˜åœ°å€çš„æ¨¡å—åç§°ã€åŸºå€å’Œåç§»éƒ¨åˆ†
+                             .WithListener(), //æ·»åŠ ç›‘å¬å™¨
             MemoryItemBuilder.Create<float>("HealthPoint")
                              .WithResolvePointer("xxx-xxx-xx.dll", 0x0072A200, 0x12E8, 0x0, 0x80, 0xE4, 0x0, 0x1E0)
                              .WithListener(),
             MemoryItemBuilder.Create<float>("Stamina")
                              .WithResolvePointer("xxx-xxx-xx.dll", 0x0072A200, 0x14E0, 0x48, 0x10, 0x20, 0x50, 0x20, 0x1B0)
                              .WithListener());
-    //ÍÆ¼öÊ¹ÓÃ¿É¸üĞÂÄÚ´æ¹ÜÀíÆ÷
+    //æ¨èä½¿ç”¨å¯æ›´æ–°å†…å­˜ç®¡ç†å™¨
 }
+```
 
+### ä½¿ç”¨å†…å­˜ç®¡ç†å™¨
+
+```csharp
 public partial class MainForm : Form
 {
     public MainForm()
     {
         InitializeComponent();
-        Program.Manager.ValueChanged += Manager_ValueChanged;//¶©ÔÄÄÚ´æÖµ¸Ä±äÊÂ¼ş
+        Program.Manager.ValueChanged += Manager_ValueChanged;//è®¢é˜…å†…å­˜å€¼æ”¹å˜äº‹ä»¶
     }
 
     private void Manager_ValueChanged(XFEExtension.NetCore.MemoryEditor.Manager.MemoryItem sender, MemoryValue e)
     {
-        Trace.WriteLine($"Ãû³Æ£º{e.CustomName} µØÖ·£º{sender:X}\tÊÇ·ñ¶ÁÈ¡µ½Öµ  ÉÏ´Î£º{e.PreviousValueGetSuccessful}  Õâ´Î£º{e.CurrentValueGetSuccessful}  Öµ´Ó£º{e.PreviousValue}  ±ä¸üÎª£º{e.CurrentValue}");
+        Trace.WriteLine($"åç§°ï¼š{e.CustomName} åœ°å€ï¼š{sender:X}\tæ˜¯å¦è¯»å–åˆ°å€¼  ä¸Šæ¬¡ï¼š{e.PreviousValueGetSuccessful}  è¿™æ¬¡ï¼š{e.CurrentValueGetSuccessful}  å€¼ä»ï¼š{e.PreviousValue}  å˜æ›´ä¸ºï¼š{e.CurrentValue}");
         switch (e.CustomName)
         {
             case "Level":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(´ıĞ´ÈëÖµ))
-                        Trace.WriteLine($"Level£ºĞ´ÈëÊ§°Ü");
+                    if (!sender.Write(å¾…å†™å…¥å€¼))
+                        Trace.WriteLine($"Levelï¼šå†™å…¥å¤±è´¥");
                 }
                 break;
             case "HealthPoint":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(´ıĞ´ÈëÖµ))
-                        Trace.WriteLine("HealthPoint£ºĞ´ÈëÊ§°Ü");
+                    if (!sender.Write(å¾…å†™å…¥å€¼))
+                        Trace.WriteLine("HealthPointï¼šå†™å…¥å¤±è´¥");
                 }
                 break;
             case "Stamina":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(´ıĞ´ÈëÖµ))
-                        Trace.WriteLine("Stamina£ºĞ´ÈëÊ§°Ü");
+                    if (!sender.Write(å¾…å†™å…¥å€¼))
+                        Trace.WriteLine("Staminaï¼šå†™å…¥å¤±è´¥");
                 }
                 break;
             default:
