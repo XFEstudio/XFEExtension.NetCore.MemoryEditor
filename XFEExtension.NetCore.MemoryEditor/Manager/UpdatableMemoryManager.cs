@@ -25,7 +25,10 @@ public class UpdatableMemoryManager : MemoryManager
         {
             if (builder.ModuleName is null)
                 throw new ArgumentNullException(nameof(builder), "对于使用基址指针表达式的构建器，模块名称是必须的");
-            builder.UpdatableMemoryAddress = new(() => Editor.ResolvePointerAddress(builder.ModuleName, builder.BaseAddress, builder.Offsets));
+            builder.UpdatableMemoryAddress = new(() =>
+            {
+                try { return Editor.ResolvePointerAddress(builder.ModuleName, builder.BaseAddress, builder.Offsets); } catch { return null; }
+            });
         }
         else
         {
