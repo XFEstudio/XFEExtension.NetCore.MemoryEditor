@@ -3,20 +3,17 @@
 /// <summary>
 /// 内存条目
 /// </summary>
-/// <param name="name">名称</param>
-/// <param name="memoryItemType">内存地址数据类型</param>
-/// <param name="memoryEditor">修改器</param>
-public abstract class MemoryItem(string name, Type memoryItemType, MemoryEditor memoryEditor)
+public abstract class MemoryItem
 {
-    private protected MemoryEditor memoryEditor = memoryEditor;
+    private protected MemoryEditor memoryEditor;
     /// <summary>
     /// 内存地址数据类型
     /// </summary>
-    public Type MemoryItemType { get; set; } = memoryItemType;
+    public Type MemoryItemType { get; set; }
     /// <summary>
     /// 内存地址标识名
     /// </summary>
-    public string Name { get; init; } = name;
+    public string Name { get; init; }
     /// <summary>
     /// 该地址是否被监听
     /// </summary>
@@ -29,7 +26,7 @@ public abstract class MemoryItem(string name, Type memoryItemType, MemoryEditor 
     /// 开始监听该地址
     /// </summary>
     /// <param name="frequency">监听频率，单位为毫秒</param>
-    public async Task StartListen(int frequency = 1) => await StartListen(TimeSpan.FromMilliseconds(frequency));
+    public async Task StartListen(int frequency) => await StartListen(TimeSpan.FromMilliseconds(frequency));
     /// <summary>
     /// 开始监听该地址
     /// </summary>
@@ -81,4 +78,17 @@ public abstract class MemoryItem(string name, Type memoryItemType, MemoryEditor 
     /// <param name="result">读取的值</param>
     /// <returns>是否读取成功</returns>
     public abstract bool Read<T>(out T result) where T : struct;
+    /// <summary>
+    /// 内存条目
+    /// </summary>
+    /// <param name="name">名称</param>
+    /// <param name="memoryItemType">内存地址数据类型</param>
+    /// <param name="memoryEditor">修改器</param>
+    protected MemoryItem(string name, Type memoryItemType, MemoryEditor memoryEditor)
+    {
+        this.memoryEditor = memoryEditor;
+        MemoryItemType = memoryItemType;
+        Name = name;
+        memoryEditor.ListeningStateChanged += (sender, e) => IsListening = e;
+    }
 }

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using XFEExtension.NetCore.DelegateExtension;
+﻿using XFEExtension.NetCore.DelegateExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 
@@ -17,12 +16,21 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// 当监听值发生改变时触发
     /// </summary>
     public event XFEEventHandler<MemoryListener, MemoryValue>? ValueChanged { add => valueChanged += value; remove => valueChanged -= value; }
+    private protected XFEEventHandler<MemoryListener, bool>? listeningStateChanged;
+    /// <summary>
+    /// 当监听状态改变时触发
+    /// </summary>
+    public event XFEEventHandler<MemoryListener, bool>? ListeningStateChanged
+    {
+        add => listeningStateChanged += value;
+        remove => listeningStateChanged -= value;
+    }
     private protected string name = customName;
     /// <summary>
     /// 监听器自定义标识名
     /// </summary>
     public string Name { get => name; }
-    private protected TimeSpan frequency;
+    private protected TimeSpan frequency = TimeSpan.FromMilliseconds(1);
     /// <summary>
     /// 监听检测频率
     /// </summary>
@@ -38,7 +46,7 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     public bool IsListening
     {
         get { return isListening; }
-        set { isListening = value; }
+        set { isListening = value; listeningStateChanged?.Invoke(this, value); }
     }
     private protected nint processHandler;
     /// <summary>

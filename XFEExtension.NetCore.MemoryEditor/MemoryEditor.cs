@@ -17,6 +17,10 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// </summary>
     public event XFEEventHandler<MemoryListener, MemoryValue>? ValueChanged;
     /// <summary>
+    /// 当监听器监听状态改变时触发
+    /// </summary>
+    public event XFEEventHandler<MemoryListener, bool>? ListeningStateChanged;
+    /// <summary>
     /// 当前进程结束时触发
     /// </summary>
     public event EventHandler? CurrentProcessExit;
@@ -127,6 +131,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
         CurrentProcess = process;
         ProcessBiteType = processType;
         ListenerManager.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.ListeningStateChanged += (sender, e) => ListeningStateChanged?.Invoke(sender, e);
         ListenerManager.CurrentProcessExit += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
         ListenerManager.CurrentProcessEntered += (sender, e) => CurrentProcessEntered?.Invoke(sender, e);
     }
@@ -140,6 +145,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
         CurrentProcess = Process.GetProcessesByName(processName).First();
         ProcessBiteType = processType;
         ListenerManager.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.ListeningStateChanged += (sender, e) => ListeningStateChanged?.Invoke(sender, e);
         ListenerManager.CurrentProcessExit += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
         ListenerManager.CurrentProcessEntered += (sender, e) => CurrentProcessEntered?.Invoke(sender, e);
     }
@@ -153,6 +159,7 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
         CurrentProcess = Process.GetProcessById(processId);
         ProcessBiteType = processType;
         ListenerManager.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        ListenerManager.ListeningStateChanged += (sender, e) => ListeningStateChanged?.Invoke(sender, e);
         ListenerManager.CurrentProcessExit += (sender, e) => CurrentProcessExit?.Invoke(sender, e);
         ListenerManager.CurrentProcessEntered += (sender, e) => CurrentProcessEntered?.Invoke(sender, e);
     }

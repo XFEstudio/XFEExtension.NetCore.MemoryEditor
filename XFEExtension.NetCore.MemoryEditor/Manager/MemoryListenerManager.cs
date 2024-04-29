@@ -16,6 +16,10 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
     /// </summary>
     public event XFEEventHandler<MemoryListener, MemoryValue>? ValueChanged;
     /// <summary>
+    /// 当监听器监听状态改变时触发
+    /// </summary>
+    public event XFEEventHandler<MemoryListener, bool>? ListeningStateChanged;
+    /// <summary>
     /// 当前进程结束时触发
     /// </summary>
     public event EventHandler? CurrentProcessExit;
@@ -53,17 +57,15 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
                 ProcessName = value.ProcessName;
                 ProcessHandler = MemoryEditor.GetProcessHandle(value.Id, ProcessAccessFlags);
                 currentProcess.Exited += CurrentProcess_Exited;
-                if (IsListening)
+
+                foreach (var listener in listenerDictionary.Values)
                 {
-                    foreach (var listener in listenerDictionary.Values)
+                    if (listener is UpdatableMemoryListener updatableMemoryListener)
+                        updatableMemoryListener.UpdateAddress(ProcessHandler);
+                    listener.ProcessHandler = ProcessHandler;
+                    if (IsListening && !listener.IsListening)
                     {
-                        if (listener is UpdatableMemoryListener updatableMemoryListener)
-                            updatableMemoryListener.UpdateAddress(ProcessHandler);
-                        if (!listener.IsListening)
-                        {
-                            listener.ProcessHandler = ProcessHandler;
-                            _ = listener.StartListen(ProcessHandler, listener.Frequency);
-                        }
+                        _ = listener.StartListen(ProcessHandler, listener.Frequency);
                     }
                 }
                 CurrentProcessEntered?.Invoke(value, EventArgs.Empty);
@@ -105,33 +107,36 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
     }
     internal override StaticMemoryListener AddStaticListener(string customName, nint memoryAddress, TimeSpan? frequency, Type type, bool startListen)
     {
-        if (!IsListening)
+        if (!IsListening && startListen)
             IsListening = true;
         var staticMemoryListener = MemoryListener.CreateStaticListener(customName, memoryAddress, type);
         listenerDictionary.Add(customName, staticMemoryListener);
         staticMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        staticMemoryListener.ListeningStateChanged += (sender, e) => ListeningStateChanged?.Invoke(sender, e);
         if (startListen)
             _ = staticMemoryListener.StartListen(ProcessHandler, frequency);
         return staticMemoryListener;
     }
     internal override DynamicMemoryListener AddDynamicListener(string customName, Func<nint?> memoryAddressGetFunc, TimeSpan? frequency, Type type, bool startListen)
     {
-        if (!IsListening)
+        if (!IsListening && startListen)
             IsListening = true;
         var dynamicMemoryListener = MemoryListener.CreateDynamicListener(customName, memoryAddressGetFunc, type);
         listenerDictionary.Add(customName, dynamicMemoryListener);
         dynamicMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        dynamicMemoryListener.ListeningStateChanged += (sender, e) => ListeningStateChanged?.Invoke(sender, e);
         if (startListen)
             _ = dynamicMemoryListener.StartListen(ProcessHandler, frequency);
         return dynamicMemoryListener;
     }
     internal override UpdatableMemoryListener AddUpdatableListener(string customName, Func<nint?> memoryAddressUpdateFunc, TimeSpan? frequency, Type type, bool startListen)
     {
-        if (!IsListening)
+        if (!IsListening && startListen)
             IsListening = true;
         var updatableMemoryListener = MemoryListener.CreateUpdatableListener(customName, memoryAddressUpdateFunc, type);
         listenerDictionary.Add(customName, updatableMemoryListener);
         updatableMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
+        updatableMemoryListener.ListeningStateChanged += (sender, e) => ListeningStateChanged?.Invoke(sender, e);
         if (startListen)
             _ = updatableMemoryListener.StartListen(ProcessHandler, frequency);
         return updatableMemoryListener;

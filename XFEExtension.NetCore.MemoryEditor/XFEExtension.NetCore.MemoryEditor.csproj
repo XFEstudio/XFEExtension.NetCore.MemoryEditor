@@ -13,13 +13,13 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</RepositoryUrl>
     <PackageTags>XFE;XFEExtension;MemoryEdit;Memory</PackageTags>
-    <PackageReleaseNotes>fix-修复了基址解析表达式可能会出现的报错</PackageReleaseNotes>
+    <PackageReleaseNotes>fix-修复了部分bug</PackageReleaseNotes>
     <Copyright>寰宇朽力网络科技版权所有</Copyright>
     <PackageProjectUrl>https://github.com/XFEstudio/XFEExtension.NetCore.MemoryEditor.git</PackageProjectUrl>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>2.0.1</Version>
+    <Version>2.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="XFEExtension.NetCore" Version="2.7.1" />
+    <PackageReference Include="XFEExtension.NetCore" Version="2.9.1" />
   </ItemGroup>
 
 </Project>
