@@ -1,4 +1,6 @@
-﻿using XFEExtension.NetCore.ImplExtension;
+﻿using System.Diagnostics;
+using XFEExtension.NetCore.DelegateExtension;
+using XFEExtension.NetCore.ImplExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 
@@ -12,6 +14,10 @@ namespace XFEExtension.NetCore.MemoryEditor;
 public abstract class UpdatableMemoryListener(string customName, Func<nint?> updateAddressFunc, Type memoryAddressType) : MemoryListener(customName, memoryAddressType)
 {
     private nint memoryAddress = updateAddressFunc.Invoke() ?? default;
+    /// <summary>
+    /// 地址更新时触发
+    /// </summary>
+    public event XFEEventHandler<UpdatableMemoryListener, nint>? MemoryAddressUpdated;
     /// <summary>
     /// 内存地址
     /// </summary>
@@ -37,13 +43,27 @@ public abstract class UpdatableMemoryListener(string customName, Func<nint?> upd
         CurrentListeningTask = Task.Run(async () =>
         {
             object? lastValue = null;
-            try { lastValue = MemoryEditor.ReadMemory(this.processHandler, memoryAddress, memoryAddressType); } catch { }
+            if (memoryAddress != 0)
+                try { lastValue = MemoryEditor.ReadMemory(this.processHandler, memoryAddress, memoryAddressType); } catch { }
             while (isListening)
             {
                 try
                 {
+                    if (memoryAddress == 0)
+                    {
+                        if (lastValue is not null)
+                        {
+                            valueChanged?.Invoke(this, new(lastValue is not null, false, lastValue, null, name));
+                            lastValue = null;
+                        }
+                        while (memoryAddress == 0 && isListening)
+                        {
+                            UpdateAddress();
+                            await Task.Delay(this.frequency);
+                        }
+                    }
                     var currentValue = MemoryEditor.ReadMemory(this.processHandler, memoryAddress, memoryAddressType);
-                    if (lastValue is null == currentValue is null || lastValue?.Equals(currentValue) == false)
+                    if (lastValue is null != currentValue is null || lastValue?.Equals(currentValue) == false)
                     {
                         valueChanged?.Invoke(this, new(lastValue is not null, currentValue is not null, lastValue, currentValue, name));
                         lastValue = currentValue;
@@ -66,5 +86,6 @@ public abstract class UpdatableMemoryListener(string customName, Func<nint?> upd
             ProcessHandler = processHandler;
         }
         memoryAddress = updateAddressFunc.Invoke() ?? memoryAddress;
+        MemoryAddressUpdated?.Invoke(this, memoryAddress);
     }
 }

@@ -1,4 +1,5 @@
-﻿using XFEExtension.NetCore.DelegateExtension;
+﻿using System.Diagnostics;
+using XFEExtension.NetCore.DelegateExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 

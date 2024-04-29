@@ -32,10 +32,13 @@ public abstract class MemoryManagerBuilder()
     /// <summary>
     /// 使用自动重新获取进程
     /// </summary>
+    /// <param name="processName">进程名称</param>
     /// <param name="reacquireProcessFrequency">重新获取进程的检测频率（单位毫秒）</param>
     /// <returns></returns>
-    public MemoryManagerBuilder WithAutoReacquireProcess(int reacquireProcessFrequency = 500)
+    public MemoryManagerBuilder WithAutoReacquireProcess(string processName = "", int reacquireProcessFrequency = 500)
     {
+        if (processName != string.Empty)
+            ProcessName = processName;
         AutoReacquireProcess = true;
         ReacquireProcessFrequency = reacquireProcessFrequency;
         return this;
@@ -45,9 +48,10 @@ public abstract class MemoryManagerBuilder()
     /// </summary>
     /// <param name="processName">进程名称</param>
     /// <returns></returns>
-    public MemoryManagerBuilder WithFindProcessWhenCreate(string processName)
+    public MemoryManagerBuilder WithFindProcessWhenCreate(string processName = "")
     {
-        ProcessName = processName;
+        if (processName != string.Empty)
+            ProcessName = processName;
         FindProcessWhenCreate = true;
         return this;
     }

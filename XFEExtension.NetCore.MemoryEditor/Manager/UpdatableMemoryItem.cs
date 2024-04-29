@@ -1,4 +1,6 @@
-﻿using XFEExtension.NetCore.ImplExtension;
+﻿using System.Diagnostics;
+using XFEExtension.NetCore.DelegateExtension;
+using XFEExtension.NetCore.ImplExtension;
 
 namespace XFEExtension.NetCore.MemoryEditor.Manager;
 
@@ -12,10 +14,33 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 [CreateImpl]
 public abstract class UpdatableMemoryItem(string name, Func<nint?> memoryAddressUpdateFunc, Type memoryItemType, MemoryEditor memoryEditor) : MemoryItem(name, memoryItemType, memoryEditor)
 {
+    private UpdatableMemoryListener? listener;
     /// <summary>
     /// 监听器
     /// </summary>
-    public UpdatableMemoryListener? Listener { get; protected set; }
+    public UpdatableMemoryListener? Listener
+    {
+        get => listener;
+        protected set
+        {
+            listener = value;
+            if (listener is not null)
+            {
+                listener.MemoryAddressUpdated += Listener_MemoryAddressUpdated;
+                MemoryAddress = listener.MemoryAddress;
+            }
+        }
+    }
+    /// <summary>
+    /// 地址更新时触发
+    /// </summary>
+    public event XFEEventHandler<UpdatableMemoryListener, nint>? MemoryAddressUpdated;
+    private void Listener_MemoryAddressUpdated(UpdatableMemoryListener sender, nint e)
+    {
+        if (MemoryAddress != e)
+            MemoryAddress = e;
+        MemoryAddressUpdated?.Invoke(sender, e);
+    }
     /// <summary>
     /// 内存地址更新方法
     /// </summary>

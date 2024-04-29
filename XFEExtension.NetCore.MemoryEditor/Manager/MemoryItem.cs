@@ -71,7 +71,7 @@ public abstract class MemoryItem(string name, Type memoryItemType, MemoryEditor 
     /// <returns>返回结果</returns>
     public T Read<T>() where T : struct
     {
-        Read<T>(out T result);
+        Read(out T result);
         return result;
     }
     /// <summary>

@@ -49,6 +49,7 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
             {
                 currentProcess?.Dispose();
                 currentProcess = value;
+                value.EnableRaisingEvents = true;
                 ProcessName = value.ProcessName;
                 ProcessHandler = MemoryEditor.GetProcessHandle(value.Id, ProcessAccessFlags);
                 currentProcess.Exited += CurrentProcess_Exited;
@@ -107,6 +108,7 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
         if (!IsListening)
             IsListening = true;
         var staticMemoryListener = MemoryListener.CreateStaticListener(customName, memoryAddress, type);
+        listenerDictionary.Add(customName, staticMemoryListener);
         staticMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
         if (startListen)
             _ = staticMemoryListener.StartListen(ProcessHandler, frequency);
@@ -117,6 +119,7 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
         if (!IsListening)
             IsListening = true;
         var dynamicMemoryListener = MemoryListener.CreateDynamicListener(customName, memoryAddressGetFunc, type);
+        listenerDictionary.Add(customName, dynamicMemoryListener);
         dynamicMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
         if (startListen)
             _ = dynamicMemoryListener.StartListen(ProcessHandler, frequency);
@@ -127,6 +130,7 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
         if (!IsListening)
             IsListening = true;
         var updatableMemoryListener = MemoryListener.CreateUpdatableListener(customName, memoryAddressUpdateFunc, type);
+        listenerDictionary.Add(customName, updatableMemoryListener);
         updatableMemoryListener.ValueChanged += (sender, e) => ValueChanged?.Invoke(sender, e);
         if (startListen)
             _ = updatableMemoryListener.StartListen(ProcessHandler, frequency);
@@ -160,7 +164,6 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
     /// <inheritdoc/>
     public override async Task StopListeners()
     {
-        IsListening = false;
         var taskList = new List<Task>();
         foreach (var listener in listenerDictionary.Values)
         {
@@ -171,18 +174,9 @@ public class MemoryListenerManager : MemoryListenerManagerBase, IDisposable, IEn
     /// <inheritdoc/>
     public override async Task StopListener(string customName) => await listenerDictionary[customName].StopListen();
     /// <inheritdoc/>
-    public override void RemoveListener(string customName)
-    {
-        listenerDictionary.Remove(customName);
-        if (listenerDictionary.Count == 0)
-            IsListening = false;
-    }
+    public override void RemoveListener(string customName) => listenerDictionary.Remove(customName);
     /// <inheritdoc/>
-    public override void ClearListeners()
-    {
-        IsListening = false;
-        listenerDictionary.Clear();
-    }
+    public override void ClearListeners() => listenerDictionary.Clear();
     /// <summary>
     /// 内存监听器
     /// </summary>
