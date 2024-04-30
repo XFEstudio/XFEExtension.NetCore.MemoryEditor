@@ -37,6 +37,10 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// </summary>
     public nint ProcessHandler { get => listenerManager.ProcessHandler; set => listenerManager.ProcessHandler = value; }
     /// <summary>
+    /// 目标进程名称
+    /// </summary>
+    public string ProcessName { get => listenerManager.ProcessName; set => listenerManager.ProcessName = value; }
+    /// <summary>
     /// 内存监听器
     /// </summary>
     public MemoryListenerManager ListenerManager

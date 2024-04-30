@@ -65,10 +65,11 @@ public abstract class MemoryManagerBuilder()
         var manager = new StaticMemoryManagerImpl(builders)
         {
             AutoReacquireProcess = AutoReacquireProcess,
-            ReacquireProcessFrequency = ReacquireProcessFrequency
+            ReacquireProcessFrequency = ReacquireProcessFrequency,
+            ProcessName = ProcessName
         };
         if (FindProcessWhenCreate)
-            _ = manager.WaitProcessEnter(ProcessName);
+            _ = manager.WaitProcessEnter(manager.ProcessName);
         return manager;
     }
     /// <summary>
@@ -81,10 +82,11 @@ public abstract class MemoryManagerBuilder()
         var manager = new DynamicMemoryManagerImpl(builders)
         {
             AutoReacquireProcess = AutoReacquireProcess,
-            ReacquireProcessFrequency = ReacquireProcessFrequency
+            ReacquireProcessFrequency = ReacquireProcessFrequency,
+            ProcessName = ProcessName
         };
         if (FindProcessWhenCreate)
-            _ = manager.WaitProcessEnter(ProcessName);
+            _ = manager.WaitProcessEnter(manager.ProcessName);
         return manager;
     }
     /// <summary>
@@ -97,10 +99,11 @@ public abstract class MemoryManagerBuilder()
         var manager = new UpdatableMemoryManager(builders)
         {
             AutoReacquireProcess = AutoReacquireProcess,
-            ReacquireProcessFrequency = ReacquireProcessFrequency
+            ReacquireProcessFrequency = ReacquireProcessFrequency,
+            ProcessName = ProcessName
         };
         if (FindProcessWhenCreate)
-            _ = manager.WaitProcessEnter(ProcessName);
+            _ = manager.WaitProcessEnter(manager.ProcessName);
         return manager;
     }
 }

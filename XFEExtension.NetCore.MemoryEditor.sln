@@ -4,12 +4,18 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEExtension.NetCore.MemoryEditor", "XFEExtension.NetCore.MemoryEditor\XFEExtension.NetCore.MemoryEditor.csproj", "{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SeaOfRadiationEditor", "..\SeaOfRadiationEditor\SeaOfRadiationEditor\SeaOfRadiationEditor.csproj", "{D4D904CF-7A48-4393-9B1F-DCD5D50F0B47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D4D904CF-7A48-4393-9B1F-DCD5D50F0B47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4D904CF-7A48-4393-9B1F-DCD5D50F0B47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4D904CF-7A48-4393-9B1F-DCD5D50F0B47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4D904CF-7A48-4393-9B1F-DCD5D50F0B47}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -22,16 +28,7 @@ Global
 		SolutionGuid = {5652406C-CF19-4708-BA94-E51808552081}
 	EndGlobalSection
 EndGlobal
-	{7D09E8EC-562E-496F-8362-5BEBD541238D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
+Section(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5652406C-CF19-4708-BA94-E51808552081}
 	EndGlobalSection
 EndGlobal

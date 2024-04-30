@@ -46,7 +46,7 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     public bool IsListening
     {
         get { return isListening; }
-        set { isListening = value; listeningStateChanged?.Invoke(this, value); }
+        set { listeningStateChanged?.Invoke(this, value); isListening = value; }
     }
     private protected nint processHandler;
     /// <summary>
@@ -66,9 +66,9 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// <exception cref="InvalidOperationException">监听已启动，无法重复启动监听</exception>
     public virtual async Task StartListen(nint processHandler, TimeSpan? frequency)
     {
-        if (isListening)
+        if (IsListening)
             throw new InvalidOperationException("监听已启动，无法重复启动监听");
-        isListening = true;
+        IsListening = true;
         this.frequency = frequency ?? TimeSpan.FromMilliseconds(1);
         this.processHandler = processHandler;
         await Task.CompletedTask;
@@ -87,7 +87,7 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
     /// <returns></returns>
     public async Task StopListen()
     {
-        isListening = false;
+        IsListening = false;
         if (CurrentListeningTask is not null)
             await CurrentListeningTask;
     }
@@ -101,7 +101,7 @@ public abstract class MemoryListener(string customName, Type memoryAddressType) 
         {
             if (disposing)
             {
-                isListening = false;
+                IsListening = false;
                 CurrentListeningTask = null;
             }
 

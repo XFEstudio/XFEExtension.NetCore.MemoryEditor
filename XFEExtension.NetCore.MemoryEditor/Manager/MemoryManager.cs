@@ -32,6 +32,10 @@ public abstract class MemoryManager : IMemoryManager
     /// </summary>
     public nint ProcessHandler { get => Editor.ProcessHandler; set => Editor.ProcessHandler = value; }
     /// <summary>
+    /// 目标进程名称
+    /// </summary>
+    public string ProcessName { get => Editor.ProcessName; set => Editor.ProcessName = value; }
+    /// <summary>
     /// 当目标进程退出后，是否自动重新获取进程
     /// </summary>
     public bool AutoReacquireProcess { get => Editor.AutoReacquireProcess; set => Editor.AutoReacquireProcess = value; }

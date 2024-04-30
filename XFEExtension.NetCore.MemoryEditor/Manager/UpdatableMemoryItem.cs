@@ -58,6 +58,7 @@ public abstract class UpdatableMemoryItem(string name, Func<nint?> memoryAddress
     {
         if (Listener is null)
             throw new InvalidOperationException($"{nameof(Listener)} 监听器为空");
+        IsListening = false;
         await Listener.StopListen();
     }
     /// <inheritdoc/>
@@ -83,6 +84,7 @@ public abstract class UpdatableMemoryItem(string name, Func<nint?> memoryAddress
     {
         if (Listener is null)
             throw new InvalidOperationException($"{nameof(Listener)} 监听器为空");
+        IsListening = true;
         memoryEditor.ListenerManager.IsListening = true;
         await Listener.StartListen(processHandler, frequency);
     }

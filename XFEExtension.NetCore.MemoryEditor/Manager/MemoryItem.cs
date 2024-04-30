@@ -89,6 +89,9 @@ public abstract class MemoryItem
         this.memoryEditor = memoryEditor;
         MemoryItemType = memoryItemType;
         Name = name;
-        memoryEditor.ListeningStateChanged += (sender, e) => IsListening = e;
+        memoryEditor.ListeningStateChanged += (sender, e) =>
+        {
+            IsListening = e;
+        };
     }
 }
