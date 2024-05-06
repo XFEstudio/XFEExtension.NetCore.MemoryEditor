@@ -37,7 +37,7 @@ public abstract class DynamicMemoryManager : MemoryManager
         }
         var dynamicMemoryItem = new DynamicMemoryItemImpl(builder.name, builder.dynamicMemoryAddress, builder.memoryAddressType, Editor);
         if (builder.hasListener)
-            dynamicMemoryItem.AddListener(builder.ListenerFrequency, builder.startListen);
+            dynamicMemoryItem.AddListener(builder.listenerFrequency, builder.startListen);
         ItemDictionary.Add(builder.name, dynamicMemoryItem);
     }
     /// <summary>

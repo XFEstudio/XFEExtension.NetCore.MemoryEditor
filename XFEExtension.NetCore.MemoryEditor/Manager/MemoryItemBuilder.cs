@@ -29,7 +29,7 @@ public abstract class MemoryItemBuilder
     public MemoryItemBuilder WithListener(TimeSpan frequency, bool startListen = false)
     {
         hasListener = true;
-        ListenerFrequency = frequency;
+        listenerFrequency = frequency;
         this.startListen = startListen;
         return this;
     }
@@ -42,7 +42,7 @@ public abstract class MemoryItemBuilder
     public MemoryItemBuilder WithListener(int frequency = 1, bool startListen = false)
     {
         hasListener = true;
-        ListenerFrequency = TimeSpan.FromMilliseconds(frequency);
+        listenerFrequency = TimeSpan.FromMilliseconds(frequency);
         this.startListen = startListen;
         return this;
     }

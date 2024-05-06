@@ -37,7 +37,7 @@ public class UpdatableMemoryManager : MemoryManager
         }
         var updatableMemoryItem = new UpdatableMemoryItemImpl(builder.name, builder.updatableMemoryAddress, builder.memoryAddressType, Editor);
         if (builder.hasListener)
-            updatableMemoryItem.AddListener(builder.ListenerFrequency, builder.startListen);
+            updatableMemoryItem.AddListener(builder.listenerFrequency, builder.startListen);
         ItemDictionary.Add(builder.name, updatableMemoryItem);
     }
     /// <summary>

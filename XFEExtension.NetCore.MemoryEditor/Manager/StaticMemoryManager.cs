@@ -25,7 +25,7 @@ public class StaticMemoryManager : MemoryManager
             throw new ArgumentNullException(nameof(builder), "对于静态地址管理器，构建器的静态地址不可为空");
         var staticMemoryItem = new StaticMemoryItemImpl(builder.name, builder.staticMemoryAddress.Value, builder.memoryAddressType, Editor);
         if (builder.hasListener)
-            staticMemoryItem.AddListener(builder.ListenerFrequency, builder.startListen);
+            staticMemoryItem.AddListener(builder.listenerFrequency, builder.startListen);
         ItemDictionary.Add(builder.name, staticMemoryItem);
     }
     /// <summary>
