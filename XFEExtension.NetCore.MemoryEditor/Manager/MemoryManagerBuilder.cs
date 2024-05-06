@@ -8,22 +8,10 @@ namespace XFEExtension.NetCore.MemoryEditor.Manager;
 [CreateImpl]
 public abstract class MemoryManagerBuilder()
 {
-    /// <summary>
-    /// 进程名称
-    /// </summary>
-    public string ProcessName { get; set; } = string.Empty;
-    /// <summary>
-    /// 当目标进程退出后，是否自动重新获取进程
-    /// </summary>
-    public bool AutoReacquireProcess { get; set; }
-    /// <summary>
-    /// 重新获取进程的检测频率（单位毫秒）
-    /// </summary>
-    public int ReacquireProcessFrequency { get; set; }
-    /// <summary>
-    /// 是否在创建后自动开始寻找目标进程
-    /// </summary>
-    public bool FindProcessWhenCreate { get; set; }
+    internal string processName = string.Empty;
+    internal bool autoReacquireProcess;
+    internal int reacquireProcessFrequency;
+    internal bool findProcessWhenCreate;
     /// <summary>
     /// 创建内存地址管理器构建器
     /// </summary>
@@ -38,9 +26,9 @@ public abstract class MemoryManagerBuilder()
     public MemoryManagerBuilder WithAutoReacquireProcess(string processName = "", int reacquireProcessFrequency = 500)
     {
         if (processName != string.Empty)
-            ProcessName = processName;
-        AutoReacquireProcess = true;
-        ReacquireProcessFrequency = reacquireProcessFrequency;
+            this.processName = processName;
+        autoReacquireProcess = true;
+        this.reacquireProcessFrequency = reacquireProcessFrequency;
         return this;
     }
     /// <summary>
@@ -51,8 +39,8 @@ public abstract class MemoryManagerBuilder()
     public MemoryManagerBuilder WithFindProcessWhenCreate(string processName = "")
     {
         if (processName != string.Empty)
-            ProcessName = processName;
-        FindProcessWhenCreate = true;
+            this.processName = processName;
+        findProcessWhenCreate = true;
         return this;
     }
     /// <summary>
@@ -64,11 +52,11 @@ public abstract class MemoryManagerBuilder()
     {
         var manager = new StaticMemoryManagerImpl(builders)
         {
-            AutoReacquireProcess = AutoReacquireProcess,
-            ReacquireProcessFrequency = ReacquireProcessFrequency,
-            ProcessName = ProcessName
+            AutoReacquireProcess = autoReacquireProcess,
+            ReacquireProcessFrequency = reacquireProcessFrequency,
+            ProcessName = processName
         };
-        if (FindProcessWhenCreate)
+        if (findProcessWhenCreate)
             _ = manager.WaitProcessEnter(manager.ProcessName);
         return manager;
     }
@@ -81,11 +69,11 @@ public abstract class MemoryManagerBuilder()
     {
         var manager = new DynamicMemoryManagerImpl(builders)
         {
-            AutoReacquireProcess = AutoReacquireProcess,
-            ReacquireProcessFrequency = ReacquireProcessFrequency,
-            ProcessName = ProcessName
+            AutoReacquireProcess = autoReacquireProcess,
+            ReacquireProcessFrequency = reacquireProcessFrequency,
+            ProcessName = processName
         };
-        if (FindProcessWhenCreate)
+        if (findProcessWhenCreate)
             _ = manager.WaitProcessEnter(manager.ProcessName);
         return manager;
     }
@@ -98,11 +86,11 @@ public abstract class MemoryManagerBuilder()
     {
         var manager = new UpdatableMemoryManager(builders)
         {
-            AutoReacquireProcess = AutoReacquireProcess,
-            ReacquireProcessFrequency = ReacquireProcessFrequency,
-            ProcessName = ProcessName
+            AutoReacquireProcess = autoReacquireProcess,
+            ReacquireProcessFrequency = reacquireProcessFrequency,
+            ProcessName = processName
         };
-        if (FindProcessWhenCreate)
+        if (findProcessWhenCreate)
             _ = manager.WaitProcessEnter(manager.ProcessName);
         return manager;
     }

@@ -21,24 +21,24 @@ public class UpdatableMemoryManager : MemoryManager
     public UpdatableMemoryItem this[string addressName] => ItemDictionary[addressName];
     internal override void Add(MemoryItemBuilder builder)
     {
-        if (builder.UseResolvePointer)
+        if (builder.useResolvePointer)
         {
-            if (builder.ModuleName is null)
+            if (builder.moduleName is null)
                 throw new ArgumentNullException(nameof(builder), "对于使用基址指针表达式的构建器，模块名称是必须的");
-            builder.UpdatableMemoryAddress = new(() =>
+            builder.updatableMemoryAddress = new(() =>
             {
-                try { return Editor.ResolvePointerAddress(builder.ModuleName, builder.BaseAddress, builder.Offsets); } catch { return null; }
+                try { return Editor.ResolvePointerAddress(builder.moduleName, builder.baseAddress, builder.offsets); } catch { return null; }
             });
         }
         else
         {
-            if (builder.UpdatableMemoryAddress is null)
+            if (builder.updatableMemoryAddress is null)
                 throw new ArgumentNullException(nameof(builder), "对于可更新内存管理器，构建器更新地址的方法不可为空");
         }
-        var updatableMemoryItem = new UpdatableMemoryItemImpl(builder.Name, builder.UpdatableMemoryAddress, builder.MemoryAddressType, Editor);
-        if (builder.HasListener)
-            updatableMemoryItem.AddListener(builder.ListenerFrequency, builder.StartListen);
-        ItemDictionary.Add(builder.Name, updatableMemoryItem);
+        var updatableMemoryItem = new UpdatableMemoryItemImpl(builder.name, builder.updatableMemoryAddress, builder.memoryAddressType, Editor);
+        if (builder.hasListener)
+            updatableMemoryItem.AddListener(builder.ListenerFrequency, builder.startListen);
+        ItemDictionary.Add(builder.name, updatableMemoryItem);
     }
     /// <summary>
     /// 获取枚举器

@@ -21,24 +21,24 @@ public abstract class DynamicMemoryManager : MemoryManager
     public DynamicMemoryItem this[string addressName] => ItemDictionary[addressName];
     internal override void Add(MemoryItemBuilder builder)
     {
-        if (builder.UseResolvePointer)
+        if (builder.useResolvePointer)
         {
-            if (builder.ModuleName is null)
+            if (builder.moduleName is null)
                 throw new ArgumentNullException(nameof(builder), "对于使用基址指针表达式的构建器，模块名称是必须的");
-            builder.DynamicMemoryAddress = new(() =>
+            builder.dynamicMemoryAddress = new(() =>
             {
-                try { return Editor.ResolvePointerAddress(builder.ModuleName, builder.BaseAddress, builder.Offsets); } catch { return null; }
+                try { return Editor.ResolvePointerAddress(builder.moduleName, builder.baseAddress, builder.offsets); } catch { return null; }
             });
         }
         else
         {
-            if (builder.DynamicMemoryAddress is null)
+            if (builder.dynamicMemoryAddress is null)
                 throw new ArgumentNullException(nameof(builder), "对于动态地址管理器，构建器的动态地址不可为空");
         }
-        var dynamicMemoryItem = new DynamicMemoryItemImpl(builder.Name, builder.DynamicMemoryAddress, builder.MemoryAddressType, Editor);
-        if (builder.HasListener)
-            dynamicMemoryItem.AddListener(builder.ListenerFrequency, builder.StartListen);
-        ItemDictionary.Add(builder.Name, dynamicMemoryItem);
+        var dynamicMemoryItem = new DynamicMemoryItemImpl(builder.name, builder.dynamicMemoryAddress, builder.memoryAddressType, Editor);
+        if (builder.hasListener)
+            dynamicMemoryItem.AddListener(builder.ListenerFrequency, builder.startListen);
+        ItemDictionary.Add(builder.name, dynamicMemoryItem);
     }
     /// <summary>
     /// 获取枚举器
