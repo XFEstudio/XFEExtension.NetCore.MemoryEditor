@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using XFEExtension.NetCore.DelegateExtension;
-using XFEExtension.NetCore.ImplExtension;
+using XFEExtension.NetCore.AutoImplement;
 
 namespace XFEExtension.NetCore.MemoryEditor.Manager;
 

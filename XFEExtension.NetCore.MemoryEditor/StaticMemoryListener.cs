@@ -1,4 +1,4 @@
-﻿using XFEExtension.NetCore.ImplExtension;
+﻿using XFEExtension.NetCore.AutoImplement;
 
 namespace XFEExtension.NetCore.MemoryEditor;
 
