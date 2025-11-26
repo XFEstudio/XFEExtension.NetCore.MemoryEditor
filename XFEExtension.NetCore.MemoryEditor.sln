@@ -22,19 +22,3 @@ Global
 		SolutionGuid = {5652406C-CF19-4708-BA94-E51808552081}
 	EndGlobalSection
 EndGlobal
- CPU.ActiveCfg = Debug|Any CPU
-		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DBFE2E7A-C727-4E8D-AD9E-83E7EA36F937}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {5652406C-CF19-4708-BA94-E51808552081}
-	EndGlobalSection
-EndGlobal
-Section(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {5652406C-CF19-4708-BA94-E51808552081}
-	EndGlobalSection
-EndGlobal

@@ -80,6 +80,14 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
     /// <returns>是否读取成功</returns>
     public bool ReadMemory<T>(nint address, out T result) where T : struct => ReadMemory(ProcessHandler, address, out result);
     /// <summary>
+    /// 读取指定地址的内存
+    /// </summary>
+    /// <param name="address">指定地址</param>
+    /// <param name="size">读取长度</param>
+    /// <param name="buffer">读取结果</param>
+    /// <returns>是否读取成功</returns>
+    public bool ReadMemory(nint address, int size, out byte[] buffer) => ReadMemory(ProcessHandler, address, size, out buffer);
+    /// <summary>
     /// 在指定内存地址中写入数据
     /// </summary>
     /// <typeparam name="T">数据类型（int,float,long等）</typeparam>
@@ -232,6 +240,23 @@ public partial class MemoryEditor : MemoryListenerManagerBase, IDisposable
             {
                 result = Marshal.PtrToStructure<T>((nint)pBuffer);
             }
+            return boolResult;
+        }
+    }
+    /// <summary>
+    /// 读取指定地址的内存
+    /// </summary>
+    /// <param name="processHandle">进程句柄</param>
+    /// <param name="address">指定地址</param>
+    /// <param name="size">读取的长度</param>
+    /// <param name="buffer">读取结果</param>
+    /// <returns>是否读取成功</returns>
+    public static bool ReadMemory(nint processHandle, nint address, int size, out byte[] buffer)
+    {
+        unsafe
+        {
+            buffer = new byte[size];
+            var boolResult = ReadProcessMemory(processHandle, address, buffer, (uint)size, out _);
             return boolResult;
         }
     }
