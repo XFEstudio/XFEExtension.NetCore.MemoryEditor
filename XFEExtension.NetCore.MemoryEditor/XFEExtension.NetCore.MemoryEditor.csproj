@@ -39,6 +39,7 @@
 
   <ItemGroup>
     <PackageReference Include="XFEExtension.NetCore" Version="3.3.*" />
+    <PackageReference Include="XFEExtension.NetCore.AutoImplement" Version="1.1.*" />
   </ItemGroup>
 
 </Project>
