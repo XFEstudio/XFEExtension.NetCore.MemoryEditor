@@ -73,21 +73,21 @@ public partial class MainForm : Form
             case "Level":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(待写入值))
+                    if (!sender.Write(99)) // 替换为实际要写入的值
                         Trace.WriteLine("Level：写入失败");
                 }
                 break;
             case "HealthPoint":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(待写入值))
+                    if (!sender.Write(100.0f)) // 替换为实际要写入的值
                         Trace.WriteLine("HealthPoint：写入失败");
                 }
                 break;
             case "Stamina":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(待写入值))
+                    if (!sender.Write(100.0f)) // 替换为实际要写入的值
                         Trace.WriteLine("Stamina：写入失败");
                 }
                 break;
