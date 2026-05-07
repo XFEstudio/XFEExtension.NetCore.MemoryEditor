@@ -1,33 +1,48 @@
 # XFEExtension.NetCore.MemoryEditor
 
-## 内存管理器
+[![NuGet Version](https://img.shields.io/nuget/v/XFEExtension.NetCore.MemoryEditor.svg)](https://www.nuget.org/packages/XFEExtension.NetCore.MemoryEditor/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/XFEExtension.NetCore.MemoryEditor.svg)](https://www.nuget.org/packages/XFEExtension.NetCore.MemoryEditor/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
-### 内存管理器类型说明
+English | [简体中文](./README.zh-CN.md)
 
-内存管理器是本开源包中力推的类，使用内存管理器可以方便快捷的开发出基于指定偏移地址的内存修改工具
+A .NET memory read/write library with support for pointer-based address resolution and a built-in memory manager.
 
-### 内存管理器类型
+## Installation
 
-- 静态内存管理器`StaticMemoryManager`：在这个内存管理器中，存放静态地址，该地址不会随着进程的不同而变动，是始终如一的
-- 动态内存管理器`DynamicMemoryManager`：在这个内存管理器中，存放的是地址的获取方法，也就是动态的，每次监听器检测地址的时候都会调用一遍该方法来获取地址
-- 可更新内存管理器`UpdatableMemoryManager`：如其名，在此内存管理器中，存放静态地址和该地址对应的更新方法，管理器默认会在目标进程更改时调用一次该方法，当然用户也可以手动调用该方法来更新
+```bash
+dotnet add package XFEExtension.NetCore.MemoryEditor
+```
 
-### 内存管理器结构
+---
 
-内存管理器里面包含了一个内存编辑器，而内存编辑器里面则是内置了一个内存监听器管理器
+## Memory Manager
 
-### 创建内存管理器（推荐使用动态内存管理器或可更新内存管理器）
+The Memory Manager is the recommended way to use this library. It wraps the Memory Editor and Memory Listener Manager into a convenient builder-pattern API.
+
+### Manager Types
+
+- **Static Memory Manager** (`StaticMemoryManager`): Stores fixed addresses that do not change between process instances.
+- **Dynamic Memory Manager** (`DynamicMemoryManager`): Stores address-resolution functions that are called each time the listener checks the value.
+- **Updatable Memory Manager** (`UpdatableMemoryManager`): Stores a static address along with an update function that is called automatically when the target process changes, or manually by the user.
+
+### Architecture
+
+Each Memory Manager contains one `MemoryEditor`, which in turn contains a `MemoryListenerManager`.
+
+### Creating a Memory Manager (Dynamic Manager recommended)
 
 ```csharp
 public static class Program
 {
-    public static DynamicMemoryManager Manager { get; } = MemoryManager.CreateBuilder() //创建内存管理器的构建器
-            .WithAutoReacquireProcess("ExampleGame") //当目标进程退出后，自动重新获取目标名称的进程
-            .WithFindProcessWhenCreate() //创建管理器时，开始寻找目标名称的进程（如果前面设置了目标进程名称此处可以不用设置）
+    public static DynamicMemoryManager Manager { get; } = MemoryManager.CreateBuilder()
+            .WithAutoReacquireProcess("ExampleGame")   // Automatically reacquire the process when it exits
+            .WithFindProcessWhenCreate()                // Start searching for the process on creation
             .BuildDynamicManager(
-            MemoryItemBuilder.Create<int>("Level") //为每个地址添加一个名称
-                             .WithResolvePointer("xxx-xxx-xx.dll", 0x0072A200, 0x14A0, 0x0, 0x80, 0xE4, 0x0, 0x1EC) //内存地址的模块名称、基址和偏移部分
-                             .WithListener(), //添加监听器
+            MemoryItemBuilder.Create<int>("Level")
+                             .WithResolvePointer("xxx-xxx-xx.dll", 0x0072A200, 0x14A0, 0x0, 0x80, 0xE4, 0x0, 0x1EC)
+                             .WithListener(),
             MemoryItemBuilder.Create<float>("HealthPoint")
                              .WithResolvePointer("xxx-xxx-xx.dll", 0x0072A200, 0x12E8, 0x0, 0x80, 0xE4, 0x0, 0x1E0)
                              .WithListener(),
@@ -37,7 +52,7 @@ public static class Program
 }
 ```
 
-### 使用内存管理器
+### Using the Memory Manager
 
 ```csharp
 public partial class MainForm : Form
@@ -45,33 +60,33 @@ public partial class MainForm : Form
     public MainForm()
     {
         InitializeComponent();
-        Program.Manager.ValueChanged += Manager_ValueChanged;//订阅内存值改变事件
+        Program.Manager.ValueChanged += Manager_ValueChanged;
     }
 
     private void Manager_ValueChanged(XFEExtension.NetCore.MemoryEditor.Manager.MemoryItem sender, MemoryValue e)
     {
-        Trace.WriteLine($"名称：{e.CustomName} 地址：{sender:X}\t是否读取到值  上次：{e.PreviousValueGetSuccessful}  这次：{e.CurrentValueGetSuccessful}  值从：{e.PreviousValue}  变更为：{e.CurrentValue}");
+        Trace.WriteLine($"Name: {e.CustomName}  Address: {sender:X}  Previous: {e.PreviousValue}  Current: {e.CurrentValue}");
         switch (e.CustomName)
         {
             case "Level":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(待写入值))
-                        Trace.WriteLine($"Level：写入失败");
+                    if (!sender.Write(valueToWrite))
+                        Trace.WriteLine("Level: write failed");
                 }
                 break;
             case "HealthPoint":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(待写入值))
-                        Trace.WriteLine("HealthPoint：写入失败");
+                    if (!sender.Write(valueToWrite))
+                        Trace.WriteLine("HealthPoint: write failed");
                 }
                 break;
             case "Stamina":
                 if (e.CurrentValueGetSuccessful)
                 {
-                    if (!sender.Write(待写入值))
-                        Trace.WriteLine("Stamina：写入失败");
+                    if (!sender.Write(valueToWrite))
+                        Trace.WriteLine("Stamina: write failed");
                 }
                 break;
             default:
@@ -81,43 +96,161 @@ public partial class MainForm : Form
 }
 ```
 
----
-
-## 内存修改器
-
-### 内存修改器类型说明
-
-内存管理器可以通过类名.来调用静态方法，也可以创建对象，来针对某个进程进行内存编辑
-
-### 内存修改器层次结构
-
-内存管理器的实例里面内置一个内存监听器管理器
-
-### 创建内存修改器
+### Reading and Writing Memory Items Directly
 
 ```csharp
+// Read a value
+int level = Program.Manager["Level"].Read<int>();
+
+// Write a value
+bool success = Program.Manager["Level"].Write<int>(99);
+```
+
+---
+
+## Memory Editor
+
+The Memory Editor provides low-level memory read/write operations. It can be used standalone or is used internally by the Memory Manager.
+
+### Creating a Memory Editor
+
+```csharp
+// Create without a process
 var memoryEditor = new MemoryEditor();
-memoryEditor.CurrentProcess = Process.GetProcessesFromName("Your Process Name");
-var writeSuccess = memoryEditor.WriteMemory(0x007621B5, 1234);
-var readSuccess = memoryEditor.ReadMemory<int>(0x007621B5, out var result);
-Console.WriteLine(resule);
+memoryEditor.CurrentProcess = Process.GetProcessesByName("YourProcessName").First();
+
+// Create directly with a process name
+var memoryEditor = new MemoryEditor("YourProcessName");
+
+// Create with a Process object
+var memoryEditor = new MemoryEditor(process);
+
+// Create with a process ID
+var memoryEditor = new MemoryEditor(processId);
 ```
 
-### 使用内存修改器（不创建实例）
+### Instance Read/Write
 
 ```csharp
-var writeSuccess = MemoryEditor.WriteMemory(0x00000a8c, 0x007621B5, 1234); //通过进程句柄0x00000a8c向地址0x007621B5中写入值1234
-var readSuccess = MemoryEditor.ReadMemory<int>(0x00000a8c, 0x007621B5, out var result); //通过进程句柄0x00000a8c读取指定数据类型为int的地址0x007621B5中的值
+bool writeSuccess = memoryEditor.WriteMemory(0x007621B5, 1234);
+bool readSuccess = memoryEditor.ReadMemory<int>(0x007621B5, out var result);
+Console.WriteLine(result);
+```
+
+### Static Read/Write (without an instance)
+
+```csharp
+nint processHandle = 0x00000a8c;
+bool writeSuccess = MemoryEditor.WriteMemory(processHandle, 0x007621B5, 1234);
+bool readSuccess = MemoryEditor.ReadMemory<int>(processHandle, 0x007621B5, out var result);
+```
+
+### Resolving Pointer Addresses
+
+```csharp
+// Instance method (using module name)
+nint address = memoryEditor.ResolvePointerAddress("game.dll", 0x0072A200, 0x14A0, 0x0, 0x1EC);
+
+// Static method
+nint address = MemoryEditor.ResolvePointerAddress(process, "game.dll", 0x0072A200, ProcessType.Bit64, 0x14A0, 0x0, 0x1EC);
 ```
 
 ---
 
-## 内存监听器管理器
+## Memory Listener Manager
 
-### 内存监听器管理器说明
+The Memory Listener Manager manages collections of memory listeners. It is used internally by the Memory Editor but can also be used standalone.
 
-推荐使用内存管理器，内存监听器管理器实际是为内存管理器服务的，当然也可以单独使用
+### Architecture
 
-### 内存监听器管理器层次结构
+Contains a `Dictionary<string, MemoryListener>` that manages all registered listeners.
 
-主要有一个Dictionary对象，该对象是对所有已创建监听器的管理
+### Creating a Memory Listener Manager
+
+```csharp
+// Create with a process name
+var listenerManager = new MemoryListenerManager("YourProcessName");
+
+// Create empty and set process later
+var listenerManager = new MemoryListenerManager();
+listenerManager.CurrentProcess = Process.GetProcessesByName("YourProcessName").First();
+```
+
+### Adding Listeners
+
+```csharp
+// Add a static listener
+var listener = listenerManager.AddStaticListener("HP", 0x007621B5, TimeSpan.FromMilliseconds(100), typeof(float), startListen: true);
+
+// Add a dynamic listener
+var listener = listenerManager.AddDynamicListener("Level", () => ResolveAddress(), TimeSpan.FromMilliseconds(100), typeof(int), startListen: true);
+```
+
+### Handling Events
+
+```csharp
+listenerManager.ValueChanged += (sender, e) =>
+{
+    Console.WriteLine($"{e.CustomName}: {e.PreviousValue} -> {e.CurrentValue}");
+};
+```
+
+### Stopping Listeners
+
+```csharp
+// Stop all listeners
+await listenerManager.StopListeners();
+
+// Stop a specific listener
+await listenerManager.StopListener("Level");
+```
+
+---
+
+## Memory Listener
+
+Individual memory listeners monitor a memory address and fire an event when the value changes.
+
+### Listener Types
+
+- `StaticMemoryListener` – monitors a fixed address
+- `DynamicMemoryListener` – calls a function each poll to get the address
+- `UpdatableMemoryListener` – address is updated on demand or when the process changes
+
+### Creating Listeners Directly
+
+```csharp
+var staticListener    = MemoryListener.CreateStaticListener("HP", 0x007621B5, typeof(float));
+var dynamicListener   = MemoryListener.CreateDynamicListener("Level", () => ResolveAddress(), typeof(int));
+var updatableListener = MemoryListener.CreateUpdatableListener("Stamina", () => ResolveAddress(), typeof(float));
+```
+
+### Starting and Stopping
+
+```csharp
+await listener.StartListen(processHandle, TimeSpan.FromMilliseconds(100));
+await listener.StopListen();
+```
+
+---
+
+## MemoryValue
+
+`MemoryValue` is a record struct passed to `ValueChanged` event handlers.
+
+| Property | Type | Description |
+|---|---|---|
+| `CustomName` | `string` | The identifier name given when the listener was created |
+| `PreviousValue` | `object?` | The previous value |
+| `CurrentValue` | `object?` | The current value |
+| `PreviousValueGetSuccessful` | `bool` | Whether the previous read succeeded |
+| `CurrentValueGetSuccessful` | `bool` | Whether the current read succeeded |
+
+---
+
+## ProcessType
+
+| Value | Description |
+|---|---|
+| `ProcessType.Bit32` | 32-bit process |
+| `ProcessType.Bit64` | 64-bit process (default) |
